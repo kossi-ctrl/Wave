@@ -1,0 +1,31 @@
+{% extends 'kobe_wave/base.html' %}
+
+{% block title %}{{ article.title|default:"Article" }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        {% if article.image %}
+            <img src="/media/wave_cover/{{ article.image.filename }}"
+                 alt="{{ article.image.filename }}"
+                 class="card-img-top"
+                 style="max-height: 350px; object-fit: cover;">
+        {% endif %}
+        <div class="card-body">
+            <h1 class="card-title">{{ article.title|default:"No title" }}</h1>
+            <p class="text-muted">Author: {{ article.author|default:"Unknown" }}</p>
+            {% if article.category %}
+                <a href="{% url 'category_detail' article.category.pk %}" class="badge bg-secondary text-decoration-none">
+                    {{ article.category }}
+                </a>
+            {% endif %}
+            {% if article.image %}
+                <p class="mt-3">Dominant color:
+                    <span class="color-preview" style="background-color: {{ article.image.hexadecimal }};"></span>
+                    <code>{{ article.image.hexadecimal }}</code>
+                </p>
+            {% endif %}
+            <a href="{{ article.url }}" target="_blank" class="btn btn-primary mt-3">Read article</a>
+        </div>
+    </div>
+    <a href="{% url 'article_list' %}" class="btn btn-secondary mt-3">← Back to articles</a>
+{% endblock %}

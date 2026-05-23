@@ -1,0 +1,240 @@
+{% extends 'kobe_wave/base.html' %}
+{% block title %}Explore{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+    <h1 class="fw-bold mb-1">Explore the Data</h1>
+    <p class="text-muted mb-4">Interactive explorer — filters update charts in real time</p>
+
+    <!-- ── FILTERS ───────────────────────────────────────────── -->
+    <div class="card shadow-sm border-0 p-3 mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">🔎 Search</label>
+                <input type="text" id="filterQ" class="form-control" placeholder="Keyword in title...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">📁 Category</label>
+                <select id="filterCat" class="form-select">
+                    <option value="">All categories</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">📅 Year</label>
+                <input type="number" id="filterYear" class="form-control" placeholder="e.g. 2020" min="1993" max="2025">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">✍️ Author</label>
+                <input type="text" id="filterAuthor" class="form-control" placeholder="Author name...">
+            </div>
+            <div class="col-md-2">
+                <button id="btnSearch" class="btn btn-primary w-100">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── STATS ─────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4" id="statsRow">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-center p-3">
+                <h6 class="text-muted">📰 Articles</h6>
+                <h2 class="fw-bold" id="statArticles">—</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-center p-3">
+                <h6 class="text-muted">🖼️ Images</h6>
+                <h2 class="fw-bold" id="statImages">—</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-center p-3">
+                <h6 class="text-muted">📁 Categories</h6>
+                <h2 class="fw-bold" id="statCategories">—</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── CHARTS ROW 1 ──────────────────────────────────────── -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3">☁️ Word Cloud</h6>
+                <div id="wordcloudChart" style="height:380px;"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3">🎨 Dominant Colors</h6>
+                <div id="colorChart" style="height:380px;"></div>
+                <div id="colorPalette" class="d-flex flex-wrap gap-2 mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ARTICLES TABLE ────────────────────────────────────── -->
+    <div class="card shadow-sm border-0 p-3 mb-4">
+        <h6 class="mb-3">📰 Articles <span id="articleCount" class="text-muted fs-6"></span></h6>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="articlesTable">
+                    <tr><td colspan="4" class="text-center text-muted">Use filters above to search</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2/dist/echarts-wordcloud.min.js"></script>
+
+<script>
+    const PALETTE = [
+        '#4f86f7','#f7a44f','#4fc97a','#ef4444','#a855f7',
+        '#06b6d4','#f59e0b','#10b981','#ec4899','#8b5cf6',
+        '#f97316','#14b8a6'
+    ];
+
+    // ── Init charts ─────────────────────────────────────────────
+    const wordcloudChart = echarts.init(document.getElementById('wordcloudChart'));
+    const colorChart     = echarts.init(document.getElementById('colorChart'));
+    window.addEventListener('resize', () => {
+        wordcloudChart.resize();
+        colorChart.resize();
+    });
+
+    // ── Load categories into select ──────────────────────────────
+    fetch('/api/categories/')
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById('filterCat');
+            data.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.name;
+                opt.textContent = `${cat.name} (${cat.total})`;
+                select.appendChild(opt);
+            });
+        });
+
+    // ── Load global stats ────────────────────────────────────────
+    fetch('/api/stats/')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('statArticles').textContent   = data.articles.toLocaleString();
+            document.getElementById('statImages').textContent     = data.images.toLocaleString();
+            document.getElementById('statCategories').textContent = data.categories.toLocaleString();
+        });
+
+    // ── Load wordcloud ───────────────────────────────────────────
+    function loadWordcloud(params = '') {
+        fetch(`/api/wordcloud/${params}`)
+            .then(r => r.json())
+            .then(data => {
+                wordcloudChart.setOption({
+                    tooltip: { show: true },
+                    series: [{
+                        type: 'wordCloud',
+                        shape: 'circle',
+                        gridSize: 8,
+                        sizeRange: [14, 64],
+                        rotationRange: [-45, 45],
+                        textStyle: {
+                            color: () => PALETTE[Math.floor(Math.random() * PALETTE.length)]
+                        },
+                        data: data
+                    }]
+                });
+            });
+    }
+
+    // ── Load colors ──────────────────────────────────────────────
+    function loadColors(params = '') {
+        fetch(`/api/colors/${params}`)
+            .then(r => r.json())
+            .then(data => {
+                colorChart.setOption({
+                    tooltip: { trigger: 'axis' },
+                    xAxis: { type: 'category', data: data.map(c => c.hex), axisLabel: { rotate: 30 } },
+                    yAxis: { type: 'value' },
+                    series: [{
+                        type: 'bar',
+                        data: data.map(c => ({
+                            value: c.count,
+                            itemStyle: { color: c.hex }
+                        })),
+                        barMaxWidth: 40
+                    }]
+                });
+
+                // Color palette visual
+                const palette = document.getElementById('colorPalette');
+                palette.innerHTML = data.map(c =>
+                    `<div title="${c.hex} (${c.count})" style="width:36px;height:36px;border-radius:6px;background:${c.hex};border:1px solid #ccc;cursor:pointer;"></div>`
+                ).join('');
+            });
+    }
+
+    // ── Load articles ────────────────────────────────────────────
+    function loadArticles(params = '') {
+        const tbody = document.getElementById('articlesTable');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm"></div> Loading...</td></tr>';
+
+        fetch(`/api/articles/${params}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('articleCount').textContent = `(${data.length} results)`;
+                if (!data.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No articles found</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(a => `
+                    <tr>
+                        <td>${a.title || '—'}</td>
+                        <td>${a.author || '—'}</td>
+                        <td>${a.category ? '<span class="badge bg-secondary">' + a.category.name + '</span>' : '—'}</td>
+                        <td>${a.created_at ? a.created_at.slice(0,10) : '—'}</td>
+                    </tr>
+                `).join('');
+            });
+    }
+
+    // ── Search handler ───────────────────────────────────────────
+    function buildParams() {
+        const q      = document.getElementById('filterQ').value;
+        const cat    = document.getElementById('filterCat').value;
+        const year   = document.getElementById('filterYear').value;
+        const author = document.getElementById('filterAuthor').value;
+
+        const params = new URLSearchParams();
+        if (q)      params.append('q', q);
+        if (cat)    params.append('category', cat);
+        if (year)   params.append('year', year);
+        if (author) params.append('author', author);
+
+        return params.toString() ? '?' + params.toString() : '';
+    }
+
+    document.getElementById('btnSearch').addEventListener('click', () => {
+        const params = buildParams();
+        loadArticles(params);
+        loadWordcloud(params);
+        loadColors(params);
+    });
+
+    // ── Initial load ─────────────────────────────────────────────
+    setTimeout(() => {
+        loadWordcloud();
+        loadColors();
+    }, 200);
+</script>
+{% endblock %}

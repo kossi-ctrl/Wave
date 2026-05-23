@@ -1,0 +1,321 @@
+{% extends 'kobe_wave/base.html' %}
+{% block title %}Covers Library{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h1 class="fw-bold mb-4">Wired Covers Library</h1>
+
+    <!-- ── FRISE COLORÉE ─────────────────────────────────────── -->
+    <div id="colorStrip" style="
+    width:100%;
+    height:150px;
+    display:flex;
+    cursor:pointer;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-behavior:smooth;
+    gap: 0px;
+    background:#111;
+    padding: 0px;
+    "></div>
+
+    <!-- ── BARRE DE FILTRES ───────────────────────────────────── -->
+    <div style="background:#0d0d0e; border-top:1px solid #222; border-bottom:1px solid #222;">
+
+        <div class="px-4 pt-3 pb-1">
+            <span style="color:#888; font-size:0.75rem; letter-spacing:2px; text-transform:uppercase;">
+                What are you looking for?
+            </span>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-3 px-4 pb-3">
+
+            <!-- Année -->
+            <div class="d-flex align-items-center gap-2">
+                <label class="mb-0" style="color:#666; font-size:0.75rem; letter-spacing:1px;">YEAR</label>
+                <select id="filterYear" class="form-select form-select-sm"
+                    style="background:#1a1a1a; color:#fff; border:1px solid #333; width:auto; min-width:90px;">
+                    <option value="">All</option>
+                </select>
+            </div>
+
+            <div style="width:1px; height:20px; background:#333;"></div>
+
+            <!-- Mois -->
+            <div class="d-flex align-items-center gap-2">
+                <label class="mb-0" style="color:#666; font-size:0.75rem; letter-spacing:1px;">MONTH</label>
+                <select id="filterMonth" class="form-select form-select-sm"
+                    style="background:#1a1a1a; color:#fff; border:1px solid #333; width:auto; min-width:110px;">
+                    <option value="">All</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+
+            <div style="width:1px; height:20px; background:#333;"></div>
+
+            <!-- Catégorie -->
+            <div class="d-flex align-items-center gap-2">
+                <label class="mb-0" style="color:#666; font-size:0.75rem; letter-spacing:1px;">CATEGORY</label>
+                <select id="filterCategory" class="form-select form-select-sm"
+                    style="background:#1a1a1a; color:#fff; border:1px solid #333; width:auto; min-width:150px;">
+                    <option value="">All</option>
+                </select>
+            </div>
+
+            <!-- Compteur + Reset -->
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <span id="filterCount" style="color:#555; font-size:0.8rem;"></span>
+                <button id="btnReset"
+                    style="background:transparent; color:#555; border:1px solid #333; font-size:0.72rem; padding:3px 10px; border-radius:4px; cursor:pointer;">
+                    ✕ Reset
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── COVER + BUBBLE CHART ─────────────────────────────── -->
+    <div class="container-fluid px-4 py-4">
+        <div class="row g-4">
+
+            <div class="col-md-5 d-flex align-items-center justify-content-center">
+                <img id="coverImg" src="" alt="Wired Cover"
+                     style="max-height:520px; max-width:100%; border-radius:8px; box-shadow:0 8px 12px rgba(0,0,0,0.18); display:none;">
+                <div id="coverPlaceholder" class="text-muted text-center">
+                    <div style="font-size:4rem;">📰</div>
+                    <div>Click a color on the strip above</div>
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div id="bubbleChart" style="height:520px; width:100%;"></div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+<script>
+    const PALETTE = [
+        '#4f86f7','#f7a44f','#4fc97a','#ef4444','#a855f7',
+        '#06b6d4','#f59e0b','#10b981','#ec4899','#8b5cf6',
+        '#f97316','#14b8a6'
+    ];
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    let allCovers      = [];
+    let covers         = [];
+    let currentIdx     = 0;
+    let activeYear     = '';
+    let activeMonth    = '';
+    let activeCategory = '';
+
+    const bubbleChart = echarts.init(document.getElementById('bubbleChart'));
+    window.addEventListener('resize', () => bubbleChart.resize());
+
+    // ── Appliquer les filtres ────────────────────────────────────
+    function applyFilters() {
+        covers = allCovers.filter(c => {
+            const matchYear     = !activeYear     || String(c.year)  === activeYear;
+            const matchMonth    = !activeMonth    || String(c.month) === activeMonth;
+            const matchCategory = !activeCategory || (c.categories && c.categories.includes(Number(activeCategory)));
+            return matchYear && matchMonth && matchCategory;
+        });
+
+        document.getElementById('filterCount').textContent = covers.length
+            ? `${covers.length} cover${covers.length > 1 ? 's' : ''}`
+            : '';
+
+        currentIdx = 0;
+        buildStrip(covers);
+
+        if (covers.length) {
+            loadCover(covers[0]);
+            highlightBar(0);
+        } else {
+            document.getElementById('coverImg').style.display         = 'none';
+            document.getElementById('coverPlaceholder').style.display = 'block';
+            document.getElementById('coverPlaceholder').innerHTML     =
+                `<div style="font-size:3rem;">🔍</div><div class="small">No covers found</div>`;
+            bubbleChart.clear();
+        }
+    }
+
+    // ── Filtre Année ─────────────────────────────────────────────
+    function buildYearFilter(data) {
+        const years = [...new Set(data.map(c => c.year))].sort((a, b) => a - b);
+        const sel   = document.getElementById('filterYear');
+        years.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            sel.appendChild(opt);
+        });
+        sel.addEventListener('change', () => {
+            activeYear = sel.value;
+            applyFilters();
+        });
+    }
+
+    // ── Filtre Mois ──────────────────────────────────────────────
+    document.getElementById('filterMonth').addEventListener('change', function () {
+        activeMonth = this.value;
+        applyFilters();
+    });
+
+    // ── Filtre Catégorie ─────────────────────────────────────────
+    function buildCategoryFilter(categories) {
+        const sel = document.getElementById('filterCategory');
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value       = cat.id;
+            opt.textContent = cat.name;
+            sel.appendChild(opt);
+        });
+        sel.addEventListener('change', function () {
+            activeCategory = this.value;
+            applyFilters();
+        });
+    }
+
+    // ── Reset ────────────────────────────────────────────────────
+    document.getElementById('btnReset').addEventListener('click', () => {
+        activeYear     = '';
+        activeMonth    = '';
+        activeCategory = '';
+        document.getElementById('filterYear').value     = '';
+        document.getElementById('filterMonth').value    = '';
+        document.getElementById('filterCategory').value = '';
+        applyFilters();
+    });
+
+    // ── Build color strip ────────────────────────────────────────
+    function buildStrip(data) {
+        const strip = document.getElementById('colorStrip');
+        strip.innerHTML = '';
+        data.forEach((cover, i) => {
+            const img = document.createElement('img');
+            img.src   = cover.url.startsWith('/') ? cover.url : '/media/wave_cover/' + cover.url;
+            img.title = `${MONTHS[cover.month - 1]} ${cover.year}`;
+            img.style.cssText = `
+                width:5px; height:100%; object-fit:cover;
+                transition:width 0.3s; display:inline-block;
+                vertical-align:middle; overflow:hidden;
+                cursor:pointer; flex-shrink:0;
+            `;
+            img.addEventListener('mouseenter', () => { img.style.width = '100px'; });
+            img.addEventListener('mouseleave', () => { img.style.width = '5px'; });
+            img.addEventListener('click', () => {
+                currentIdx = i;
+                loadCover(cover);
+                highlightBar(i);
+            });
+            strip.appendChild(img);
+        });
+    }
+
+    // ── Highlight selected bar ───────────────────────────────────
+    function highlightBar(idx) {
+        const bars = document.getElementById('colorStrip').children;
+        Array.from(bars).forEach((bar, i) => {
+            bar.style.outline = i === idx ? '3px solid #fff' : 'none';
+            bar.style.zIndex  = i === idx ? '10' : '0';
+        });
+        const bar = bars[idx];
+        if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    // ── Bubble chart ─────────────────────────────────────────────
+    function loadBubble(year, month) {
+        fetch(`/api/cover-words/?year=${year}&month=${month}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.words || !data.words.length) { bubbleChart.clear(); return; }
+                const maxVal = Math.max(...data.words.map(d => d.value));
+                bubbleChart.setOption({
+                    backgroundColor: 'transparent',
+                    tooltip: { formatter: p => `<b>${p.data[3]}</b><br/>Fréquence : <b>${p.data[2]}</b>` },
+                    xAxis: { show: false, min: 0, max: 100 },
+                    yAxis: { show: false, min: 0, max: 100 },
+                    series: [{
+                        type: 'scatter',
+                        data: data.words.map(d => [
+                            10 + Math.random() * 80,
+                            10 + Math.random() * 80,
+                            d.value, d.name,
+                        ]),
+                        symbolSize: d => Math.max(20, Math.sqrt(d[2] / maxVal) * 120),
+                        label: { show: true, formatter: p => p.data[3], fontSize: 12, color: '#fff', fontWeight: 'bold' },
+                        itemStyle: { color: p => PALETTE[p.dataIndex % PALETTE.length], opacity: 0.85 },
+                        emphasis: { scale: 1.1, itemStyle: { opacity: 1 } }
+                    }]
+                });
+            });
+    }
+
+    // ── Load cover ───────────────────────────────────────────────
+    function loadCover(cover) {
+        const img         = document.getElementById('coverImg');
+        const placeholder = document.getElementById('coverPlaceholder');
+        img.src           = cover.url.startsWith('/') ? cover.url : '/media/wave_cover/' + cover.url;
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+        img.onload  = () => { img.style.display = 'block'; placeholder.style.display = 'none'; };
+        img.onerror = () => {
+            img.style.display = 'none';
+            placeholder.innerHTML = `<div style="font-size:3rem;">🖼️</div><div class="small text-muted">${cover.url}</div>`;
+            placeholder.style.display = 'block';
+        };
+        loadBubble(cover.year, cover.month);
+    }
+
+    // ── Keyboard navigation ──────────────────────────────────────
+    document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft' && currentIdx > 0) {
+            currentIdx--;
+            loadCover(covers[currentIdx]);
+            highlightBar(currentIdx);
+        }
+        if (e.key === 'ArrowRight' && currentIdx < covers.length - 1) {
+            currentIdx++;
+            loadCover(covers[currentIdx]);
+            highlightBar(currentIdx);
+        }
+    });
+
+    // ── Initial load ─────────────────────────────────────────────
+    fetch('/api/covers/')
+        .then(r => r.json())
+        .then(data => {
+            allCovers = data;
+            covers    = data;
+            buildYearFilter(data);
+            buildStrip(data);
+            if (data.length) {
+                currentIdx = data.length - 1;
+                loadCover(data[currentIdx]);
+                highlightBar(currentIdx);
+            }
+            return fetch('/api/categories/');
+        })
+        .then(r => r.json())
+        .then(data => {
+            buildCategoryFilter(data);
+        });
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+<!-- ── KPI ───────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center p-4">
+                <h6 class="text-muted"> Articles</h6>
+                <h2 class="fw-bold">{{ nb_articles }}</h2>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center p-4">
+                <h6 class="text-muted"> Images</h6>
+                <h2 class="fw-bold">{{ nb_images }}</h2>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center p-4">
+                <h6 class="text-muted"> Catégories</h6>
+                <h2 class="fw-bold">{{ nb_categories }}</h2>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 text-center p-4">
+                <h6 class="text-muted"> Moy. articles/cat.</h6>
+                <h2 class="fw-bold">{{ avg_per_cat }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ROW 1 : Barres catégories + Camembert top 10 ──────── -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3">Articles par catégorie</h6>
+                <div id="catChart" style="height:380px;"></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3"> Top 10 catégories</h6>
+                <div id="pieChart" style="height:380px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ROW 2 : Top auteurs + Images par année ─────────────── -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3"> Top 10 auteurs</h6>
+                <div id="authorChart" style="height:380px;"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3"> Images par année</h6>
+                <div id="yearChart" style="height:380px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ROW 3 : Articles par année + Articles par mois ─────── -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3"> Articles par année</h6>
+                <div id="artYearChart" style="height:350px;"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-3"> Articles par mois</h6>
+                <div id="monthChart" style="height:350px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ROW 4 : Couleurs dominantes ───────────────────────── -->
+    <div class="card shadow-sm border-0 p-3 mb-4">
+        <h6 class="mb-3"> Couleurs dominantes des images</h6>
+        <div id="colorChart" style="height:350px;"></div>
+    </div>
+
+</div>
+const catLabels    = {{ cat_labels|safe }};
+    const catData      = {{ cat_data|safe }};
+    const pieLabels    = {{ pie_labels|safe }};
+    const pieData      = {{ pie_data|safe }};
+    const authorLabels = {{ author_labels|safe }};
+    const authorData   = {{ author_data|safe }};
+    const yearLabels   = {{ year_labels|safe }};
+    const yearData     = {{ year_data|safe }};
+    const artYearLabels= {{ art_year_labels|safe }};
+    const artYearData  = {{ art_year_data|safe }};
+    const months       = {{ months|safe }};
+    const monthData    = {{ month_data|safe }};
+    const colorLabels  = {{ color_labels|safe }};
+    const colorData    = {{ color_data|safe }};
+
+    function initChart(id, option) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const chart = echarts.init(el);
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+        return chart;
+    }
+
+    setTimeout(function () {
+
+        initChart('catChart', {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: catLabels, axisLabel: { rotate: 35, fontSize: 11 } },
+            yAxis: { type: 'value' },
+            series: [{ type: 'bar', data: catData, color: '#4f86f7', barMaxWidth: 40 }]
+        });
+
+        initChart('pieChart', {
+            tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+            legend: { orient: 'vertical', left: 'left', textStyle: { fontSize: 11 } },
+            series: [{
+                type: 'pie',
+                radius: ['35%', '65%'],
+                data: pieLabels.map((l, i) => ({ name: l, value: pieData[i] })),
+                emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } }
+            }]
+        });
+
+        initChart('authorChart', {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'value' },
+            yAxis: { type: 'category', data: [...authorLabels].reverse(), axisLabel: { fontSize: 11 } },
+            series: [{ type: 'bar', data: [...authorData].reverse(), color: '#a855f7', barMaxWidth: 30 }]
+        });
+
+        initChart('yearChart', {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: yearLabels },
+            yAxis: { type: 'value' },
+            series: [{ type: 'line', data: yearData, smooth: true, color: '#f7a44f', areaStyle: { opacity: 0.15 } }]
+        });
+
+        initChart('artYearChart', {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: artYearLabels },
+            yAxis: { type: 'value' },
+            series: [{ type: 'line', data: artYearData, smooth: true, color: '#ef4444', areaStyle: { opacity: 0.15 } }]
+        });
+
+        initChart('monthChart', {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: months },
+            yAxis: { type: 'value' },
+            series: [{ type: 'line', data: monthData, smooth: true, color: '#4fc97a', areaStyle: { opacity: 0.15 } }]
+        });
+
+        initChart('colorChart', {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: colorLabels, axisLabel: { rotate: 30 } },
+            yAxis: { type: 'value' },
+            series: [{
+                type: 'bar',
+                data: colorData.map((val, i) => ({
+                    value: val,
+                    itemStyle: { color: colorLabels[i] }
+                })),
+                barMaxWidth: 50
+            }]
+        });
+
+    }, 200);
+
+
+
+
+
+
+    <a class="nav-link text-dark" href="{% url 'article_list' %}">Articles</a>
+            <a class="nav-link text-dark" href="{% url 'image_list' %}">Images</a>
+            <a class="nav-link text-dark" href="{% url 'imaginaries' %}">Imaginaries</a>
+            <a class="nav-link text-dark" href="{% url 'explore' %}">Explore</a>
+            <a class="nav-link text-dark" href="{% url 'wiredviz' %}">WiredViz</a>
+         

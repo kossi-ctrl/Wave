@@ -1,0 +1,54 @@
+{% extends 'kobe_wave/base.html' %}
+{% load static %}
+
+{% block title %}Contact{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 style="color:white;">Contact</h1>
+
+    <div class="row mt-4">
+        <!-- Texte à gauche -->
+        <div class="col-md-5">
+            <p style="color:white;">
+                Wave still has a lot to learn! We would love to receive feedback on the project.
+                Please feel free to use this form if you have a question, comment, or suggestion.
+                Every bit of feedback is valuable and helps improve the platform.
+            </p>
+        </div>
+
+        <!-- Formulaire à droite -->
+        <div class="col-md-6 offset-md-1">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label style="color:white;">Name</label>
+                    <input type="text" name="name" class="form-control" style="background:#b0b8d1; border:none;">
+                </div>
+
+                <div class="mb-3">
+                    <label style="color:white;">E-mail address</label>
+                    <input type="email" name="email" class="form-control" style="background:#b0b8d1; border:none;">
+                </div>
+
+                <div class="mb-3">
+                    <label style="color:white;">Message</label>
+                    <textarea name="message" class="form-control" rows="5" style="background:#b0b8d1; border:none;"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-light fw-bold">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Credits -->
+    <hr style="border-color: rgba(255,255,255,0.2); margin-top:60px;">
+    <h4 style="color:white;">Legal notices</h4>
+    <br>
+    <h4 style="color:white;">Credits</h4>
+    <div class="d-flex gap-4 mt-3">  
+        <img src="{% static 'kobe_wave/img/logoUniv_CesrBLEU.png' %}" height="50" alt="CESR">
+    </div>
+</div>
+{% endblock %}

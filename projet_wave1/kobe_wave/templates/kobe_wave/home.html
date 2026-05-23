@@ -1,0 +1,233 @@
+{% extends 'kobe_wave/base.html' %}
+{% load static %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div style="background: #0a0f2c; min-height: 100vh;">
+
+     <h1 class="fw-bold mb-4" style="color:white;">Home</h1>
+
+
+    <!-- STATS -->
+    <div class="container pt-5">
+        <div class="row g-3 mb-5">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="statArticles">—</div>
+                    <div class="stat-label">Articles</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="statCovers">—</div>
+                    <div class="stat-label">Covers</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">1993–2025</div>
+                    <div class="stat-label">Years</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COVER A LA UNE -->
+    <div class="container mb-5">
+        <h2 class="section-title">Cover of the moment</h2>
+        <div class="row g-4 align-items-center">
+            <div class="col-md-4 text-center">
+                <img id="featuredImg" src="" alt="Cover" style="max-height:400px; border-radius:8px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); display:none;">
+            </div>
+            <div class="col-md-4" id="featuredInfo" style="display:none;">
+                <div class="cover-year" id="featuredYear"></div>
+                <div class="cover-meta" id="featuredMeta"></div>
+                <div class="color-palette mt-3" id="featuredPalette"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIL CHRONOLOGIQUE -->
+    <div class="container mb-5">
+        <h2 class="section-title">Timeline of covers</h2>
+        <div id="timelineStrip" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:12px;"></div>
+    </div>
+
+    <!-- LIENS SECTIONS -->
+    <div class="container mb-5">
+        <h2 class="section-title">Explore</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <a href="{% url 'covers' %}" class="nav-card">
+                    <div class="nav-card-icon">🗂</div>
+                    <div class="nav-card-title">Covers</div>
+                    <div class="nav-card-desc">Browse every Wired cover from 1993 to today.</div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{% url 'data' %}" class="nav-card">
+                    <div class="nav-card-icon">📊</div>
+                    <div class="nav-card-title">Data</div>
+                    <div class="nav-card-desc">Explore color, themes, and editorial trends.</div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{% url 'timeline' %}" class="nav-card">
+                    <div class="nav-card-icon">📅</div>
+                    <div class="nav-card-title">Timeline</div>
+                    <div class="nav-card-desc">Follow Wired's visual and cultural evolution.</div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{% url 'project' %}" class="nav-card">
+                    <div class="nav-card-icon">💡</div>
+                    <div class="nav-card-title">The Project</div>
+                    <div class="nav-card-desc">About Wave and how the corpus was built.</div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{% url 'contact' %}" class="nav-card">
+                    <div class="nav-card-icon">✉️</div>
+                    <div class="nav-card-title">Contact</div>
+                    <div class="nav-card-desc">Send us feedback, questions or suggestions.</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.stat-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+.stat-card:hover { transform: translateY(-4px); }
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -1px;
+}
+.stat-label {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 4px;
+}
+.section-title {
+    color: white;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 24px;
+    opacity: 0.6;
+}
+.cover-year {
+    font-size: 4rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+}
+.cover-meta {
+    color: rgba(255,255,255,0.6);
+    margin-top: 8px;
+    font-size: 1rem;
+}
+.color-palette { display: flex; gap: 8px; }
+.color-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+}
+.timeline-thumb {
+    flex-shrink: 0;
+    width: 60px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    opacity: 0.7;
+}
+.timeline-thumb:hover {
+    transform: scale(1.15);
+    opacity: 1;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+.nav-card {
+    display: block;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 28px 20px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+}
+.nav-card:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-4px);
+    text-decoration: none;
+}
+.nav-card-icon { font-size: 2rem; margin-bottom: 12px; }
+.nav-card-title {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.nav-card-desc {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+</style>
+
+<script>
+fetch('/api/stats/')
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('statArticles').textContent = data.articles.toLocaleString();
+        document.getElementById('statCovers').textContent = data.images.toLocaleString();
+    });
+
+fetch('/api/covers/')
+    .then(r => r.json())
+    .then(covers => {
+        if (!covers.length) return;
+
+        const random = covers[Math.floor(Math.random() * covers.length)];
+        const img = document.getElementById('featuredImg');
+        img.src = random.url;
+        img.style.display = 'block';
+        document.getElementById('featuredYear').textContent = random.year;
+        document.getElementById('featuredMeta').textContent = `Issue ${random.month}/${random.year}`;
+        document.getElementById('featuredInfo').style.display = 'block';
+        
+
+        const strip = document.getElementById('timelineStrip');
+        const sorted = [...covers].sort((a, b) => a.year - b.year || a.month - b.month);
+        sorted.forEach(c => {
+            const el = document.createElement('img');
+            el.src = c.url;
+            el.className = 'timeline-thumb';
+            el.title = `${c.month}/${c.year}`;
+            el.addEventListener('click', () => {
+                img.src = c.url;
+                document.getElementById('featuredYear').textContent = c.year;
+               const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                document.getElementById('featuredMeta').textContent = `${months[c.month - 1]} ${c.year}`;
+                    `<div class="color-swatch" style="background:${c.hex}" title="${c.hex}"></div>`;
+                document.getElementById('featuredInfo').style.display = 'block';
+            });
+            strip.appendChild(el);
+        });
+    });
+</script>
+{% endblock %}

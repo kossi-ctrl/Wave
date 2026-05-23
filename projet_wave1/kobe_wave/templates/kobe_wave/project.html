@@ -1,0 +1,67 @@
+{% extends 'kobe_wave/base.html' %}
+{% load static %}
+
+{% block title %}The Project{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="color:white;">
+
+    <h1 class="mb-4">About the project</h1>
+
+    <p>
+        Wave is a project conceived by <em>Federico Biggio</em> and developed in partnership with students from CESR.
+        It explores the visual, editorial, and cultural legacy of Wired magazine through an approach blending design,
+        digital humanities, and data analysis. The goal is to create an experimental space where one can observe,
+        manipulate, and interpret the elements that have shaped the magazine's identity, while offering a contemporary
+        reinterpretation of its imagery.
+    </p>
+
+    <!-- Équipe -->
+    <div class="row mt-5 align-items-center">
+        <div class="col-md-8">
+            <p>
+                Wave is a project led by <em>Federico Biggio</em>, a lecturer and researcher in information and communication
+                sciences at the University of Tours. Its objective is to offer a critical perspective on culture,
+                information visualization, and research in the age of AI. This project is also supported by two students
+                from the Center for Advanced Renaissance Studies. First, <em>Kossi Zangbe</em>, with a background in anthropology,
+                is interested in cultural dynamics and social representations, with a particular interest in technological
+                imaginaries and figures of media power. Finally, <em>Orphée Bonnardeau</em>, trained in literature, history, arts,
+                and culture, is comfortable with graphic design tools and critical approaches to visual storytelling.
+                Together, the two students were able to develop the project from start to finish with the help of
+                <em>Federico Biggio</em> and their professors.
+            </p>
+        </div>
+        <div class="col-md-4 text-center">
+            <img src="{% static 'kobe_wave/img/Federico-Biggio.png' %}"
+                 alt="Federico Biggio"
+                 style="width:180px; height:220px; object-fit:cover; border-radius:8px; display:block; margin:auto;">
+            <p class="mt-2" style="color:#aaa;">MR.BIGGIO</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- Section Django fond noir -->
+<div style="background:#000; padding:60px 0; margin-top:40px;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h1 style="font-size:5rem; font-weight:bold; color:white;">django</h1>
+            </div>
+            <div class="col-md-8">
+                <p style="color:white; text-align:justify;">
+                    For this project, we chose to use Django, a Python web framework known for its robustness and ease of
+                    implementation. The two team members familiarized themselves with this tool, exploring its features before
+                    gradually and rigorously integrating it into the project. Django was incorporated according to recommended
+                    best practices, notably by adhering to the MVT (Model-View-Template) architecture, which clearly structures
+                    the code. It allowed us to manage the database efficiently and optimally, thanks to its ORM
+                    (Object-Relational Mapping), which facilitates interactions with the data without requiring complex SQL
+                    queries. Managing migrations, models, and views was greatly simplified, making the project more
+                    maintainable and scalable.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

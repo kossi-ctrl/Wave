@@ -1,0 +1,188 @@
+{% extends 'kobe_wave/base.html' %}
+{% block title %}Technological Imaginaries{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+    <h1 class="fw-bold mb-1">🔭 Technological Imaginaries</h1>
+    <p class="text-muted mb-4">How technological themes evolve through articles and images</p>
+
+    <div class="card shadow-sm border-0 p-3 mb-4">
+        <h6 class="mb-1">📈 Evolution of Technological Themes by Year</h6>
+        <p class="text-muted small mb-3">Which imaginaries dominate each era?</p>
+        <div id="evoChart" style="height:420px;"></div>
+    </div>
+
+    <div class="card shadow-sm border-0 p-3 mb-4">
+        <h6 class="mb-1">⚔️ Battle of Imaginaries: AI vs Security vs Science</h6>
+        <p class="text-muted small mb-3">Which technological theme dominates each year?</p>
+        <div id="battleChart" style="height:380px;"></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-1">🗺️ Heatmap: Theme Intensity by Year</h6>
+                <p class="text-muted small mb-3">The darker the cell, the more present the theme</p>
+                <div id="heatmapChart" style="height:380px;"></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 p-3">
+                <h6 class="mb-1">🕸️ Tech Themes Radar</h6>
+                <p class="text-muted small mb-3">Overall volume per theme</p>
+                <div id="radarChart" style="height:380px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 p-3 mb-4">
+        <h6 class="mb-1">☁️ Word Cloud of Article Titles</h6>
+        <p class="text-muted small mb-3">The most frequent words across all article titles</p>
+        <div id="wordcloudChart" style="height:420px;"></div>
+    </div>
+
+    <div class="card shadow-sm border-0 p-3 mb-4">
+        <h6 class="mb-1">🎨 Chromatic Identity by Category</h6>
+        <p class="text-muted small mb-3">Dominant colors of images associated with each theme</p>
+        <div id="colorCatChart" style="height:380px;"></div>
+        <div class="mt-3" id="colorPalettes"></div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2/dist/echarts-wordcloud.min.js"></script>
+<script>
+    const evoYearLabels    = {{ evo_year_labels|safe }};
+    const evoSeries        = {{ evo_series|safe }};
+    const techCats         = {{ tech_cats|safe }};
+    const heatmapData      = {{ heatmap_data|safe }};
+    const heatmapYears     = {{ heatmap_years|safe }};
+    const heatmapCats      = {{ heatmap_cats|safe }};
+    const radarData        = {{ radar_data|safe }};
+    const radarMax         = {{ radar_max }};
+    const radarCats        = {{ radar_cats|safe }};
+    const wordcloudData    = {{ wordcloud_data|safe }};
+    const colorByCat       = {{ color_by_cat|safe }};
+    const colorCats        = {{ color_cats|safe }};
+    const battleYearLabels = {{ battle_year_labels|safe }};
+    const battleSeries     = {{ battle_series|safe }};
+    const battleCats       = {{ battle_cats|safe }};
+
+    const PALETTE = [
+        '#4f86f7','#f7a44f','#4fc97a','#ef4444','#a855f7',
+        '#06b6d4','#f59e0b','#10b981','#ec4899','#8b5cf6',
+        '#f97316','#14b8a6'
+    ];
+
+    function initChart(id, option) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const chart = echarts.init(el);
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+        return chart;
+    }
+
+    setTimeout(function () {
+
+        initChart('evoChart', {
+            tooltip: { trigger: 'axis' },
+            legend: { data: techCats, bottom: 0, type: 'scroll' },
+            grid: { bottom: 60 },
+            xAxis: { type: 'category', data: evoYearLabels },
+            yAxis: { type: 'value' },
+            series: evoSeries.map((s, i) => ({
+                name: s.name, type: 'line', data: s.data, smooth: true,
+                color: PALETTE[i % PALETTE.length],
+                areaStyle: { opacity: 0.05 },
+            }))
+        });
+
+        initChart('battleChart', {
+            tooltip: { trigger: 'axis' },
+            legend: { data: battleCats, bottom: 0 },
+            grid: { bottom: 60 },
+            xAxis: { type: 'category', data: battleYearLabels },
+            yAxis: { type: 'value' },
+            series: battleSeries.map((s, i) => ({
+                name: s.name, type: 'line', data: s.data, smooth: true,
+                lineStyle: { width: 3 },
+                color: PALETTE[i % PALETTE.length],
+                emphasis: { focus: 'series' },
+            }))
+        });
+
+        const heatmapMax = Math.max(...heatmapData.map(d => d[2]));
+        initChart('heatmapChart', {
+            tooltip: {
+                formatter: p => `${heatmapYears[p.data[0]]} — ${heatmapCats[p.data[1]]}<br/><b>${p.data[2]} articles</b>`
+            },
+            grid: { left: 140, bottom: 60 },
+            xAxis: { type: 'category', data: heatmapYears, axisLabel: { rotate: 45, fontSize: 10 } },
+            yAxis: { type: 'category', data: heatmapCats },
+            visualMap: {
+                min: 0, max: heatmapMax, calculable: true,
+                orient: 'horizontal', left: 'center', bottom: 0,
+                inRange: { color: ['#f0f9ff', '#0369a1'] }
+            },
+            series: [{ type: 'heatmap', data: heatmapData }]
+        });
+
+        initChart('radarChart', {
+            tooltip: {},
+            radar: {
+                indicator: radarCats.map(c => ({ name: c, max: radarMax })),
+                radius: '65%',
+            },
+            series: [{
+                type: 'radar',
+                data: [{ value: radarData, name: 'Volume', areaStyle: { opacity: 0.2 } }],
+                color: '#4f86f7',
+            }]
+        });
+
+        initChart('wordcloudChart', {
+            tooltip: { show: true },
+            series: [{
+                type: 'wordCloud',
+                shape: 'circle',
+                gridSize: 8,
+                sizeRange: [14, 72],
+                rotationRange: [-45, 45],
+                textStyle: {
+                    color: () => PALETTE[Math.floor(Math.random() * PALETTE.length)]
+                },
+                data: wordcloudData
+            }]
+        });
+
+        initChart('colorCatChart', {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: colorCats },
+            yAxis: { type: 'value' },
+            series: [{
+                type: 'bar',
+                data: colorCats.map(cat => (colorByCat[cat] || []).reduce((s, c) => s + c.count, 0)),
+                itemStyle: { color: (params) => PALETTE[params.dataIndex % PALETTE.length] },
+                barMaxWidth: 60,
+            }]
+        });
+
+        const container = document.getElementById('colorPalettes');
+        colorCats.forEach(cat => {
+            const colors = colorByCat[cat] || [];
+            if (!colors.length) return;
+            const div = document.createElement('div');
+            div.className = 'd-flex align-items-center mb-2 gap-2';
+            div.innerHTML = `<span style="width:130px;font-size:13px;font-weight:500;">${cat}</span>` +
+                colors.map(c =>
+                    `<div title="${c.hex} (${c.count})" style="width:36px;height:36px;border-radius:6px;background:${c.hex};border:1px solid #ccc;"></div>`
+                ).join('');
+            container.appendChild(div);
+        });
+
+    }, 200);
+</script>
+{% endblock %}

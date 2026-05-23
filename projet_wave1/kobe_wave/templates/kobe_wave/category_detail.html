@@ -1,0 +1,18 @@
+{% extends 'kobe_wave/base.html' %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Category: {{ category.name }}</h1>
+    <div class="list-group">
+        {% for article in articles %}
+            <a href="{% url 'article_detail' article.pk %}" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">{{ article.title|default:"No title" }}</h5>
+                <small class="text-muted">{{ article.author|default:"Unknown" }}</small>
+            </a>
+        {% empty %}
+            <p>No articles in this category.</p>
+        {% endfor %}
+    </div>
+    <a href="{% url 'article_list' %}" class="btn btn-secondary mt-3">← Back to articles</a>
+{% endblock %}
