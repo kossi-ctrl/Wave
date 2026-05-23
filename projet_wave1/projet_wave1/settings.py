@@ -87,18 +87,14 @@ if os.environ.get("USE_SQLITE") == "True":
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.environ.get("MYSQL_DATABASE", "wave_kobe_db"),
-            "USER": os.environ.get("MYSQL_USER", "wave_kobe"),
-            "PASSWORD": os.environ.get("MYSQL_PASSWORD"),
-            "HOST": os.environ.get("MYSQL_HOST", "localhost"),
-            "PORT": os.environ.get("MYSQL_PORT", "3306"),
-            "OPTIONS": {
-                "charset": "utf8mb4",
-            },
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("PGDATABASE"),
+            "USER": os.environ.get("PGUSER"),
+            "PASSWORD": os.environ.get("PGPASSWORD"),
+            "HOST": os.environ.get("PGHOST"),
+            "PORT": os.environ.get("PGPORT", "5432"),
         }
     }
-
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
