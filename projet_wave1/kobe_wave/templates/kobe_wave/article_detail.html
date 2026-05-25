@@ -5,7 +5,7 @@
 {% block content %}
     <div class="card">
         {% if article.image %}
-            <img src="/media/wave_cover/{{ article.image.filename }}"
+            <img src="{{ article.image.cover_url }}"
                  alt="{{ article.image.filename }}"
                  class="card-img-top"
                  style="max-height: 350px; object-fit: cover;">

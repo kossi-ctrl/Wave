@@ -8,7 +8,7 @@
         {% for image in images %}
             <div class="col-md-4 mb-3">
                 <div class="card">
-                    <img src="/media/wave_cover/{{ image.filename }}"
+                    <img src="{{ image.cover_url }}"
                          class="card-img-top"
                          alt="{{ image.filename }}"
                          style="height: 180px; object-fit: cover;">

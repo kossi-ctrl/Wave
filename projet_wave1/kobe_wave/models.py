@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.db.models import UniqueConstraint, CheckConstraint, Q
 
@@ -53,6 +54,11 @@ class Image(models.Model):
 
     def __str__(self):
         return self.filename
+
+    @property
+    def cover_url(self):
+        cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+        return f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{self.filename}"
 
 
 class Article(models.Model):

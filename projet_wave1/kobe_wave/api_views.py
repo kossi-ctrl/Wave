@@ -506,9 +506,9 @@ def api_color_analysis(request):
     return Response(result)
 
 
-# ── /api/covers/ ────────────────────────────────────────────────
 @api_view(["GET"])
 def api_covers(request):
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
     cat_map = defaultdict(set)
     for row in Article.objects.filter(
         category__isnull=False
@@ -523,7 +523,7 @@ def api_covers(request):
     return Response([
         {
             "id": img.id_image,
-            "url": f"/media/wave_cover/{img.filename}",
+            "url": f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{img.filename}",
             "year": img.year,
             "month": img.month,
             "hex": img.hexadecimal or "#cccccc",
@@ -534,7 +534,6 @@ def api_covers(request):
         }
         for img in images
     ])
-
 
 # ── /api/cover-words/ ───────────────────────────────────────────
 @api_view(["GET"])
