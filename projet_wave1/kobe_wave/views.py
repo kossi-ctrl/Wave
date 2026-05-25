@@ -598,7 +598,12 @@ def imaginaries(request):
 
 
 def explore(request):
-    categories = Category.objects.annotate(total=Count("article")).order_by("-total")
+    categories = (
+    Category.objects
+    .annotate(total=Count("article"))
+    .filter(total__gt=0)
+    .order_by("-total")
+)
     context = {
         "categories": json.dumps([c.name for c in categories]),
     }
