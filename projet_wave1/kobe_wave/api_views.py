@@ -5,6 +5,7 @@ from django.db.models import Count
 from kobe_wave.models import Article, Image, Category
 from collections import Counter, defaultdict
 import re
+import os
 
 STOP_WORDS = frozenset(
     {
