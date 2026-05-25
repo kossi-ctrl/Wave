@@ -4,12 +4,27 @@ from django.views.generic import ListView, DetailView, TemplateView
 from django.db.models import Count
 from kobe_wave.models import Article, Image, Category
 from collections import Counter
+from django.core.mail import send_mail
+from django.contrib import messages
 import json
 import calendar
 import re
 
 
 def contact(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        message = request.POST.get("message")
+
+        send_mail(
+            subject="Message from your website",
+            message=f"Name: {name}\nEmail: {email}\nMessage: {message}",
+            from_email=email,
+            recipient_list=[os.environ.get("EMAIL_HOST_USER")],
+        )
+        messages.success(request, "Your message has been sent successfully!")
+        return render(request, "kobe_wave/contact.html")
     return render(request, "kobe_wave/contact.html")
 
 

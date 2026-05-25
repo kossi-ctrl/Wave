@@ -18,9 +18,16 @@
         </div>
 
         <!-- Formulaire à droite -->
-        <div class="col-md-6 offset-md-1">
-            <form method="POST">
-                {% csrf_token %}
+<div class="col-md-6 offset-md-1">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
 
                 <div class="mb-3">
                     <label style="color:white;">Name</label>
