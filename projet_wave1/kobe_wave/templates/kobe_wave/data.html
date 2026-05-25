@@ -75,8 +75,6 @@ fetch('/api/cooccurrence/')
     .then(r => r.json())
     .then(data => {
         const chart = echarts.init(document.getElementById('networkChart'));
-        let selectedNode = null;
-        let selectedEdge = null;
         const maxVal = Math.max(...data.nodes.map(n => n.value), 1);
 
         const PALETTE = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#f97316', '#ec4899'];
@@ -143,12 +141,12 @@ fetch('/api/cooccurrence/')
 
         // Hover sur un lien → articles
         chart.on('mouseover', { dataType: 'edge' }, params => {
-           selectedEdge = {
-            source: params.data.source,
-            target: params.data.target,
-           };
-           selectedNode = null;
-           highhlightGraph();
+            const w1 = params.data.source;
+            const w2 = params.data.target;
+            document.getElementById('networkWord').textContent = `${w1} ↔ ${w2}`;
+            document.getElementById('networkPanel').style.display = 'block';
+            document.getElementById('networkArticles').innerHTML = '<p class="text-muted small">Chargement...</p>';
+
             fetch(`/api/articles-cooccurrence/?w1=${w1}&w2=${w2}`)
                 .then(r => r.json())
                 .then(articles => {
@@ -171,8 +169,11 @@ fetch('/api/cooccurrence/')
 
         // Clic sur un nœud → articles
         chart.on('click', { dataType: 'node' }, params => {
-            selectedNode = params.data.name;
-            selectedEdge = null;
+            const word = params.name;
+            document.getElementById('networkWord').textContent = `"${word}"`;
+            document.getElementById('networkPanel').style.display = 'block';
+            document.getElementById('networkArticles').innerHTML = '<p class="text-muted small">Chargement...</p>';
+
             fetch(`/api/articles/?q=${word}`)
                 .then(r => r.json())
                 .then(articles => {
@@ -195,32 +196,47 @@ fetch('/api/cooccurrence/')
 
         // Recherche + highlight
         document.getElementById('btnSearch').addEventListener('click', () => {
-    const word = document.getElementById('searchWord').value.trim().toLowerCase();
-    if (!word) return;
+            const word = document.getElementById('searchWord').value.trim().toLowerCase();
+            if (!word) return;
 
-    fetch(`/api/explore/?q=${word}`)
-        .then(r => r.json())
-        .then(data => {
+            const option = chart.getOption();
+            const nodes = option.series[0].data;
+            const links = option.series[0].links;
+
+            const found = nodes.find(n => n.name === word);
+            if (!found) {
+                alert(`"${word}" n'existe pas dans le graphe.`);
+                return;
+            }
+
+            const neighbors = new Set([word]);
+            links.forEach(l => {
+                if (l.source === word) neighbors.add(l.target);
+                if (l.target === word) neighbors.add(l.source);
+            });
+
             chart.setOption({
                 series: [{
-                    data: data.nodes.map(n => ({
-                        name: n.id,
-                        value: n.value,
-                        symbolSize: 10 + n.value,
+                    data: nodes.map(n => ({
+                        ...n,
                         itemStyle: {
-                            color: n.id === word ? '#facc15' : '#4f86f7',
+                            color: n.name === word ? '#facc15' : neighbors.has(n.name) ? nodeColor(n.value) : '#cccccc',
+                            opacity: neighbors.has(n.name) ? 1 : 0.15,
+                            borderColor: '#fff',
+                            borderWidth: 1.5,
                         }
                     })),
-                    links: data.links.map(l => ({
-                        source: l.source,
-                        target: l.target,
-                        value: l.value,
-                        lineStyle: { color: '#aaa' }
+                    links: links.map(l => ({
+                        ...l,
+                        lineStyle: {
+                            color: l.source === word || l.target === word ? '#f97316' : '#aaaaaa',
+                            opacity: l.source === word || l.target === word ? 1 : 0.1,
+                            width: l.source === word || l.target === word ? 3 : 1,
+                        }
                     }))
                 }]
             });
         });
-});
 
         // Reset
         document.getElementById('btnReset').addEventListener('click', () => {
@@ -255,77 +271,6 @@ fetch('/api/cooccurrence/')
             });
         });
     });
-    function highlightGraph() {
-    const option = chart.getOption();
-    const nodes = option.series[0].data;
-    const links = option.series[0].links;
-
-    chart.setOption({
-        series: [{
-            data: nodes.map(n => {
-                const isActiveNode = selectedNode && n.name === selectedNode;
-
-                const isLinkedToNode =
-                    selectedNode &&
-                    links.some(l =>
-                        (l.source === n.name && l.target === selectedNode) ||
-                        (l.target === n.name && l.source === selectedNode)
-                    );
-
-                return {
-                    ...n,
-                    itemStyle: {
-                        ...n.itemStyle,
-                        color: selectedNode
-                            ? (isActiveNode
-                                ? '#facc15'
-                                : isLinkedToNode
-                                    ? n.itemStyle.color
-                                    : '#cccccc')
-                            : n.itemStyle.color,
-                        opacity: selectedNode
-                            ? (isActiveNode || isLinkedToNode ? 1 : 0.2)
-                            : 1
-                    }
-                };
-            }),
-
-            links: links.map(l => {
-                const isActiveEdge =
-                    selectedEdge &&
-                    l.source === selectedEdge.source &&
-                    l.target === selectedEdge.target;
-
-                const isRelatedToNode =
-                    selectedNode &&
-                    (l.source === selectedNode || l.target === selectedNode);
-
-                return {
-                    ...l,
-                    lineStyle: {
-                        ...l.lineStyle,
-                        color:
-                            isActiveEdge || isRelatedToNode
-                                ? '#f97316'
-                                : '#aaaaaa',
-                        opacity:
-                            isActiveEdge || isRelatedToNode
-                                ? 1
-                                : selectedNode || selectedEdge
-                                    ? 0.1
-                                    : 0.4,
-                        width:
-                            isActiveEdge
-                                ? 4
-                                : isRelatedToNode
-                                    ? 2.5
-                                    : 1
-                    }
-                };
-            })
-        }]
-    });
-}
 // ── Radial Chart ─────────────────────────────────────────────────
 const radialChart = echarts.init(document.getElementById('radialChart'));
 window.addEventListener('resize', () => radialChart.resize());
