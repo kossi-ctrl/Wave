@@ -1,5 +1,5 @@
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.generic import ListView, DetailView, TemplateView
 from django.db.models import Count
 from kobe_wave.models import Article, Image, Category
@@ -16,22 +16,29 @@ def contact(request):
     if request.method == "POST":
         name = request.POST.get("name")
         email = request.POST.get("email")
-        message = request.POST.get("message")
+        user_message = request.POST.get("message")
+
+        print("POST reçu :", name, email)
 
         try:
-            send_mail(
+            result = send_mail(
                 subject=f"Message de {name} via Wave",
-                message=f"De : {name}\nEmail : {email}\n\n{message}",
-                from_email=os.environ.get('EMAIL_HOST_USER'),
-                recipient_list=[os.environ.get('EMAIL_HOST_USER')],
+                message=f"De : {name}\nEmail : {email}\n\n{user_message}",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[settings.EMAIL_HOST_USER],
                 fail_silently=False,
             )
-            messages.success(request, "Votre message a été envoyé !")
+
+            print("send_mail result =", result)
+
+            messages.success(request, "Votre message a été envoyé.")
+            return redirect("contact")
+
         except Exception as e:
-            messages.error(request, "Erreur lors de l'envoi. Réessayez plus tard.")
+            print("ERREUR CONTACT :", repr(e))
+            messages.error(request, f"Erreur : {e}")
 
     return render(request, "kobe_wave/contact.html")
-
 def project(request):
     return render(request, "kobe_wave/project.html")
 
