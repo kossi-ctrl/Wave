@@ -210,7 +210,7 @@
         strip.innerHTML = '';
         data.forEach((cover, i) => {
             const img = document.createElement('img');
-            img.src   = cover.url.startsWith('/') ? cover.url : '/media/wave_cover/' + cover.url;
+            img.src = cover.url;
             img.title = `${MONTHS[cover.month - 1]} ${cover.year}`;
             img.style.cssText = `
                 width:5px; height:100%; object-fit:cover;
@@ -272,7 +272,7 @@
     function loadCover(cover) {
         const img         = document.getElementById('coverImg');
         const placeholder = document.getElementById('coverPlaceholder');
-        img.src           = cover.url.startsWith('/') ? cover.url : '/media/wave_cover/' + cover.url;
+        img.src           = cover.url;
         img.style.display = 'none';
         placeholder.style.display = 'block';
         img.onload  = () => { img.style.display = 'block'; placeholder.style.display = 'none'; };
