@@ -526,7 +526,7 @@ def api_covers(request):
     return Response([
         {
             "id": img.id_image,
-           "url": cloudinary.utils.cloudinary_url(f"wave_cover/{img.filename}.jpg")[0],
+           "url": f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{img.filename}",
             "year": img.year,
             "month": img.month,
             "hex": img.hexadecimal or "#cccccc",
