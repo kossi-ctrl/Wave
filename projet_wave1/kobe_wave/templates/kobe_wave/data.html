@@ -282,6 +282,7 @@ fetch('/api/radial/')
         const cats  = data.categories;
         radialChart.setOption({
             tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            confine: true,
             legend: { data: cats, bottom: 0, type: 'scroll' },
             polar: { radius: ['15%', '75%'] },
             angleAxis: {
@@ -291,14 +292,17 @@ fetch('/api/radial/')
                 axisLabel: { fontSize: 12, fontWeight: 'bold' },
             },
             radiusAxis: { type: 'value' },
-            series: cats.map((cat, ci) => ({
-                type: 'bar',
-                name: cat,
-                data: words.map(w => w.by_category.find(b => b.category === cat)?.count || 0),
-                coordinateSystem: 'polar',
-                stack: 'total',
-                color: PALETTE[ci % PALETTE.length],
-            })),
+           series: cats.map((cat, ci) => ({
+    type: 'bar',
+    name: cat,
+    data: words.map(w => {
+        const val = w.by_category.find(b => b.category === cat)?.count || 0;
+        return val > 0 ? val : null;
+    }),
+    coordinateSystem: 'polar',
+    stack: 'total',
+    color: PALETTE[ci % PALETTE.length],
+})),
         });
     });
 </script>
