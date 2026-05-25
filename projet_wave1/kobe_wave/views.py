@@ -1,4 +1,4 @@
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.views.generic import ListView, DetailView, TemplateView
 from django.db.models import Count
@@ -6,10 +6,41 @@ from kobe_wave.models import Article, Image, Category
 from collections import Counter
 from django.contrib import messages
 from django.conf import settings
+from django.http import JsonResponse
+from django.db.models import Q
 import json
 import calendar
 import re
 import requests
+
+
+def explore_word(request):
+    word = request.GET.get("q", "").lower()
+
+    if not word:
+        return JsonResponse({"nodes": [], "links": []})
+
+    articles = Article.objects.filter(title__icontains=word)
+
+    # mots co-occurrents simples (basé sur titres)
+    words = []
+    for a in articles:
+        words += re.findall(r"\b[a-zA-Z]{4,}\b", a.title.lower())
+
+    freq = Counter(words).most_common(20)
+
+    nodes = [{"id": word, "value": len(articles)}]
+    nodes += [{"id": w, "value": c} for w, c in freq]
+
+    links = [
+        {"source": word, "target": w, "value": c}
+        for w, c in freq
+    ]
+
+    return JsonResponse({
+        "nodes": nodes,
+        "links": links
+    })
 
 def contact(request):
     if request.method == "POST":

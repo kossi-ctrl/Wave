@@ -196,47 +196,32 @@ fetch('/api/cooccurrence/')
 
         // Recherche + highlight
         document.getElementById('btnSearch').addEventListener('click', () => {
-            const word = document.getElementById('searchWord').value.trim().toLowerCase();
-            if (!word) return;
+    const word = document.getElementById('searchWord').value.trim().toLowerCase();
+    if (!word) return;
 
-            const option = chart.getOption();
-            const nodes = option.series[0].data;
-            const links = option.series[0].links;
-
-            const found = nodes.find(n => n.name === word);
-            if (!found) {
-                alert(`"${word}" n'existe pas dans le graphe.`);
-                return;
-            }
-
-            const neighbors = new Set([word]);
-            links.forEach(l => {
-                if (l.source === word) neighbors.add(l.target);
-                if (l.target === word) neighbors.add(l.source);
-            });
-
+    fetch(`/api/explore/?q=${word}`)
+        .then(r => r.json())
+        .then(data => {
             chart.setOption({
                 series: [{
-                    data: nodes.map(n => ({
-                        ...n,
+                    data: data.nodes.map(n => ({
+                        name: n.id,
+                        value: n.value,
+                        symbolSize: 10 + n.value,
                         itemStyle: {
-                            color: n.name === word ? '#facc15' : neighbors.has(n.name) ? nodeColor(n.value) : '#cccccc',
-                            opacity: neighbors.has(n.name) ? 1 : 0.15,
-                            borderColor: '#fff',
-                            borderWidth: 1.5,
+                            color: n.id === word ? '#facc15' : '#4f86f7',
                         }
                     })),
-                    links: links.map(l => ({
-                        ...l,
-                        lineStyle: {
-                            color: l.source === word || l.target === word ? '#f97316' : '#aaaaaa',
-                            opacity: l.source === word || l.target === word ? 1 : 0.1,
-                            width: l.source === word || l.target === word ? 3 : 1,
-                        }
+                    links: data.links.map(l => ({
+                        source: l.source,
+                        target: l.target,
+                        value: l.value,
+                        lineStyle: { color: '#aaa' }
                     }))
                 }]
             });
         });
+});
 
         // Reset
         document.getElementById('btnReset').addEventListener('click', () => {
