@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from django.db.models import Count
 from kobe_wave.models import Article, Image, Category
 from collections import Counter, defaultdict
+import cloudinary
+import cloudinary.utils
 import re
 import os
 
@@ -524,7 +526,7 @@ def api_covers(request):
     return Response([
         {
             "id": img.id_image,
-            "url": f"https://res.cloudinary.com/{cloud_name}/image/upload/{img.filename}",
+           "url": cloudinary.utils.cloudinary_url(f"wave_cover/{img.filename}")[0],
             "year": img.year,
             "month": img.month,
             "hex": img.hexadecimal or "#cccccc",
