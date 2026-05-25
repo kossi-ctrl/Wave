@@ -13,33 +13,50 @@ import re
 import os
 
 
+
 def contact(request):
     if request.method == "POST":
         name = request.POST.get("name")
         email = request.POST.get("email")
-        user_message = request.POST.get("message")
+        message = request.POST.get("message")
 
-        print("POST reçu :", name, email)
+        url = "https://api.brevo.com/v3/smtp/email"
 
-        try:
-            result = send_mail(
-                subject=f"Message de {name} via Wave",
-                message=f"De : {name}\nEmail : {email}\n\n{user_message}",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[settings.EMAIL_HOST_USER],
-                fail_silently=False,
-            )
+        payload = {
+            "sender": {
+                "name": "Wave",
+                "email": settings.DEFAULT_FROM_EMAIL
+            },
+            "to": [
+                {
+                    "email": settings.DEFAULT_FROM_EMAIL
+                }
+            ],
+            "subject": f"Message de {name} via Wave",
+            "htmlContent": f"""
+                <h3>Nouveau message</h3>
+                <p><b>Nom:</b> {name}</p>
+                <p><b>Email:</b> {email}</p>
+                <p><b>Message:</b><br>{message}</p>
+            """
+        }
 
-            print("send_mail result =", result)
+        headers = {
+            "accept": "application/json",
+            "api-key": settings.BREVO_API_KEY,
+            "content-type": "application/json"
+        }
 
-            messages.success(request, "Votre message a été envoyé.")
-            return redirect("contact")
+        response = requests.post(url, json=payload, headers=headers)
 
-        except Exception as e:
-            print("ERREUR CONTACT :", repr(e))
-            messages.error(request, f"Erreur : {e}")
+        if response.status_code == 201:
+            messages.success(request, "Message envoyé ✔️")
+        else:
+            print("ERREUR BREVO:", response.text)
+            messages.error(request, "Erreur lors de l'envoi")
 
     return render(request, "kobe_wave/contact.html")
+
 def project(request):
     return render(request, "kobe_wave/project.html")
 
