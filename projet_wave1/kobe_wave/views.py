@@ -1,19 +1,15 @@
 from django.http import Http404
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.views.generic import ListView, DetailView, TemplateView
 from django.db.models import Count
 from kobe_wave.models import Article, Image, Category
 from collections import Counter
-from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
 import json
 import calendar
 import re
-import os
 import requests
-
-
 
 def contact(request):
     if request.method == "POST":
@@ -48,16 +44,23 @@ def contact(request):
             "content-type": "application/json"
         }
 
-        response = requests.post(url, json=payload, headers=headers)
+        try:
+            response = requests.post(url, json=payload, headers=headers)
 
-        if response.status_code == 201:
-            messages.success(request, "Message envoyé ✔️")
-        else:
-            print("ERREUR BREVO:", response.text)
-            messages.error(request, "Erreur lors de l'envoi")
+            # 🔥 DEBUG IMPORTANT
+            print("STATUS:", response.status_code)
+            print("RESPONSE:", response.text)
+
+            if response.status_code == 201:
+                messages.success(request, "Message envoyé ✔️")
+            else:
+                messages.error(request, f"Erreur Brevo: {response.text}")
+
+        except Exception as e:
+            print("ERREUR EXCEPTION:", repr(e))
+            messages.error(request, f"Erreur technique: {e}")
 
     return render(request, "kobe_wave/contact.html")
-
 def project(request):
     return render(request, "kobe_wave/project.html")
 
