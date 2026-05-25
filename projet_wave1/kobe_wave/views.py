@@ -18,16 +18,19 @@ def contact(request):
         email = request.POST.get("email")
         message = request.POST.get("message")
 
-        send_mail(
-            subject="Message from your website",
-            message=f"Name: {name}\nEmail: {email}\nMessage: {message}",
-            from_email=email,
-            recipient_list=[os.environ.get("EMAIL_HOST_USER")],
-        )
-        messages.success(request, "Your message has been sent successfully!")
-        return render(request, "kobe_wave/contact.html")
-    return render(request, "kobe_wave/contact.html")
+        try:
+            send_mail(
+                subject=f"Message de {name} via Wave",
+                message=f"De : {name}\nEmail : {email}\n\n{message}",
+                from_email=os.environ.get('EMAIL_HOST_USER'),
+                recipient_list=[os.environ.get('EMAIL_HOST_USER')],
+                fail_silently=False,
+            )
+            messages.success(request, "Votre message a été envoyé !")
+        except Exception as e:
+            messages.error(request, "Erreur lors de l'envoi. Réessayez plus tard.")
 
+    return render(request, "kobe_wave/contact.html")
 
 def project(request):
     return render(request, "kobe_wave/project.html")
