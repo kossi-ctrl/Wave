@@ -292,16 +292,17 @@ fetch('/api/radial/')
                 axisLabel: { fontSize: 12, fontWeight: 'bold' },
             },
             radiusAxis: { type: 'value' },
-           series: cats.map((cat, ci) => ({
+          series: cats.map((cat, ci) => ({
     type: 'bar',
     name: cat,
-    data: words.map(w => {
-        const val = w.by_category.find(b => b.category === cat)?.count || 0;
-        return val > 0 ? val : null;
-    }),
     coordinateSystem: 'polar',
     stack: 'total',
     color: PALETTE[ci % PALETTE.length],
+
+    data: words.map(w => {
+        const val = w.by_category.find(b => b.category === cat)?.count || 0;
+        return val > 0 ? val : null;
+    }).filter(v => v !== null)
 })),
         });
     });
