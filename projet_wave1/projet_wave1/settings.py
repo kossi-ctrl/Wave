@@ -106,6 +106,7 @@ else:
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "TIMEOUT": 3600,  # Cache timeout in seconds
     }
 }
 
