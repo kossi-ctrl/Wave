@@ -1,0 +1,74 @@
+git # Environnement virtuel
+env/
+venv/
+
+# Variables d'environnement
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Coverage
+.coverage
+coverage.xml
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+.env
+.env.save
+venv/
+__pycache__/
+wave.zip
+projet_wave1/data/
+*.zip
+
+# IDE
+.idea/
+Echarts/.idea/
+
+# fichiers inutiles
+files/
+files (1)/
+
+# python cache
+__pycache__/
+*.pyc
+
+# data lourdes
+projet_wave1/data/
+*.zip
+
+# ENV
+.env
+.env.*
+venv/
+
+# IDE
+.idea/
+Echarts/.idea/
+
+# DATA
+projet_wave1/data/
+*.zip
+
+# SYSTEM
+__pycache__/
+*.pyc
+
+# EXPORTS
+files/
+files (1)/
+*.docx

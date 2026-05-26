@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Django + ECharts Demo</title>
+
+    <!-- Apache ECharts (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+      .row { display: grid; grid-template-columns: 1fr; gap: 18px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+      .chart { width: 100%; height: 380px; }
+      .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+      label { font-size: 14px; }
+      select, input { padding: 6px 8px; }
+      @media (min-width: 1000px) {
+        .row { grid-template-columns: 1fr 1fr; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Django + Apache ECharts</h1>
+
+    <div class="row">
+      <div class="card">
+        <div class="controls">
+          <label for="days">Line + Bar range:</label>
+          <select id="days">
+            <option value="7">7 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </div>
+        <div id="lineBar" class="chart"></div>
+      </div>
+
+      <div class="card">
+        <div class="controls">
+          <label for="n">Scatter points:</label>
+          <input id="n" type="number" value="1000" min="100" step="100" />
+          <button id="reloadScatter" type="button">Reload</button>
+        </div>
+        <div id="scatter" class="chart"></div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <div class="controls">
+          <span>Radar (static example)</span>
+        </div>
+        <div id="radar" class="chart"></div>
+      </div>
+    </div>
+
+    <script>
+      // ------- chart instances -------
+      const lineBar = echarts.init(document.getElementById("lineBar"));
+      const scatter = echarts.init(document.getElementById("scatter"));
+      const radar = echarts.init(document.getElementById("radar"));
+
+      // Resize charts on window resize
+      window.addEventListener("resize", () => {
+        lineBar.resize();
+        scatter.resize();
+        radar.resize();
+      });
+
+      // ------- Line + Bar -------
+      async function loadLineBar() {
+        const days = document.getElementById("days").value;
+        const res = await fetch(`/api/line-bar/?days=${encodeURIComponent(days)}`);
+        const payload = await res.json();
+
+        lineBar.setOption({
+          tooltip: { trigger: "axis" },
+          legend: { top: 0 },
+          grid: { left: 45, right: 20, top: 40, bottom: 45 },
+          xAxis: { type: "category", data: payload.x },
+          yAxis: { type: "value" },
+          dataZoom: [{ type: "inside" }, { type: "slider" }],
+          series: payload.series,
+        }, true);
+      }
+
+      document.getElementById("days").addEventListener("change", loadLineBar);
+
+      // ------- Scatter -------
+      async function loadScatter() {
+        const n = document.getElementById("n").value;
+        const res = await fetch(`/api/scatter/?n=${encodeURIComponent(n)}`);
+        const payload = await res.json();
+
+        scatter.setOption({
+          tooltip: {},
+          xAxis: { type: "value" },
+          yAxis: { type: "value" },
+          dataZoom: [{ type: "inside" }, { type: "slider" }],
+          title: {text:"ddd"},
+          series: [{
+            type: "scatter",
+            data: payload.points,
+            large: true,
+            largeThreshold: 2000,
+          }]
+        }, true);
+      }
+
+      document.getElementById("reloadScatter").addEventListener("click", loadScatter);
+
+      // ------- Radar -------
+      async function loadRadar() {
+        const res = await fetch(`/api/radar/`);
+        const payload = await res.json();
+
+        radar.setOption({
+          tooltip: {},
+          legend: { top: 0 },
+          radar: { indicator: payload.indicators },
+          series: [{
+            type: "radar",
+            data: [{
+              value: payload.series[0].data, name: payload.series[0].name
+            },{
+              value: payload.series[1].data, name: payload.series[1].name
+            }]
+          }]
+        }, true);
+      }
+
+      // initial load
+      loadLineBar();
+      loadScatter();
+      loadRadar();
+    </script>
+  </body>
+</html>

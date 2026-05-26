@@ -1,0 +1,21 @@
+
+# data lourdes
+data/
+files/
+files (1)/
+wave.zip
+
+# env
+.env
+.env.save
+venv/
+
+# cache / python
+__pycache__/
+*.pyc
+db.sqlite3
+staticfiles/
+data/
+*.zip
+files/
+files (1)/
