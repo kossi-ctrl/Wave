@@ -14,34 +14,188 @@ import re
 import requests
 
 
+# -----------------------
+# 🔍 API CO-OCCURRENCE
+# Gère deux cas :
+#   /api/cooccurrence/           → graphe initial (top mots globaux)
+#   /api/cooccurrence/?word=xxx  → nœud à injecter dans le graphe
+# -----------------------
+
+STOP_WORDS = {
+    "the","a","an","is","in","on","at","to","for","of","and","or",
+    "but","it","its","this","that","with","are","was","be","as","by",
+    "from","has","have","how","what","why","when","who","will","can",
+    "about","up","out","not","no","so","do","if","your","you","we",
+    "our","they","their","new","get","more","all","into","over","just",
+    "now","like","then","could","would","should","there","been","were",
+    "which","even","most","also","back","make","made","may","one","two",
+    "three","first","last","here","still","us","he","she","his","her",
+    "does","did","had","via","say","says","want","need","use","used",
+    "using","look","way","time","year","very","some","been","have","only",
+}
+
+
 def explore_word(request):
-    word = request.GET.get("q", "").lower()
+    word = request.GET.get("word", "").lower().strip()
 
+    # ── CAS 1 : pas de mot → graphe initial ──────────────────────
     if not word:
-        return JsonResponse({"nodes": [], "links": []})
+        titles = list(Article.objects.values_list("title", flat=True)[:20000])
 
+        # Fréquence globale des mots
+        all_words = []
+        for title in titles:
+            tokens = re.findall(r"\b[a-zA-Z]{4,}\b", title.lower())
+            all_words += [t for t in tokens if t not in STOP_WORDS]
+
+        word_freq = Counter(all_words)
+        top_words = [w for w, _ in word_freq.most_common(40)]
+        top_set = set(top_words)
+
+        # Co-occurrences entre les top mots
+        co_counts = Counter()
+        for title in titles:
+            tokens = set(re.findall(r"\b[a-zA-Z]{4,}\b", title.lower())) & top_set
+            token_list = list(tokens)
+            for i in range(len(token_list)):
+                for j in range(i + 1, len(token_list)):
+                    pair = tuple(sorted([token_list[i], token_list[j]]))
+                    co_counts[pair] += 1
+
+        nodes = [
+            {"id": w, "value": word_freq[w]}
+            for w in top_words
+        ]
+
+        links = [
+            {"source": p[0], "target": p[1], "value": c}
+            for p, c in co_counts.most_common(80)
+            if c >= 3
+        ]
+
+        return JsonResponse({"nodes": nodes, "links": links})
+
+    # ── CAS 2 : mot fourni → injection dans le graphe ────────────
     articles = Article.objects.filter(title__icontains=word)
+    freq = articles.count()
 
-    # mots co-occurrents simples (basé sur titres)
-    words = []
-    for a in articles:
-        words += re.findall(r"\b[a-zA-Z]{4,}\b", a.title.lower())
+    if freq == 0:
+        return JsonResponse({"nodes": [], "links": [], "value": 0})
 
-    freq = Counter(words).most_common(20)
+    co_counts = Counter()
+    for article in articles:
+        tokens = set(re.findall(r"\b[a-zA-Z]{4,}\b", article.title.lower()))
+        tokens -= STOP_WORDS
+        if word in tokens:
+            for t in tokens:
+                if t != word:
+                    co_counts[tuple(sorted([word, t]))] += 1
 
-    nodes = [{"id": word, "value": len(articles)}]
-    nodes += [{"id": w, "value": c} for w, c in freq]
+    top_pairs = co_counts.most_common(20)
 
     links = [
-        {"source": word, "target": w, "value": c}
-        for w, c in freq
+        {"source": p[0], "target": p[1], "value": c}
+        for p, c in top_pairs
+        if c >= 2
     ]
 
-    return JsonResponse({
-        "nodes": nodes,
-        "links": links
-    })
+    neighbor_words = set()
+    for p, _ in top_pairs:
+        neighbor_words.update(p)
+    neighbor_words.discard(word)
 
+    nodes = [{"id": word, "value": freq}]
+    for w in neighbor_words:
+        w_freq = Article.objects.filter(title__icontains=w).count()
+        nodes.append({"id": w, "value": w_freq})
+
+    return JsonResponse({"nodes": nodes, "links": links, "value": freq})
+
+
+# -----------------------
+# 🔍 API ARTICLES PAR MOT
+# /api/articles/?q=xxx
+# -----------------------
+def api_articles(request):
+    q = request.GET.get("q", "").strip()
+    if not q:
+        return JsonResponse([], safe=False)
+    articles = Article.objects.filter(title__icontains=q).values(
+        "id_articles", "title", "author"
+    )[:50]
+    return JsonResponse(list(articles), safe=False)
+
+
+# -----------------------
+# 🔍 API ARTICLES CO-OCCURRENCE
+# /api/articles-cooccurrence/?w1=xxx&w2=yyy
+# -----------------------
+def api_articles_cooccurrence(request):
+    w1 = request.GET.get("w1", "").strip()
+    w2 = request.GET.get("w2", "").strip()
+    if not w1 or not w2:
+        return JsonResponse([], safe=False)
+    articles = Article.objects.filter(
+        title__icontains=w1
+    ).filter(
+        title__icontains=w2
+    ).values("id_articles", "title", "author")[:50]
+    return JsonResponse(list(articles), safe=False)
+
+
+# -----------------------
+# 🔍 API RADIAL CHART
+# /api/radial/
+# -----------------------
+def api_radial(request):
+    STOP_WORDS_RADIAL = STOP_WORDS | {"wired", "review", "best", "guide", "inside"}
+
+    titles = Article.objects.select_related("category").values_list(
+        "title", "category__name"
+    )[:20000]
+
+    all_words = []
+    for title, _ in titles:
+        tokens = re.findall(r"\b[a-zA-Z]{4,}\b", title.lower())
+        all_words += [t for t in tokens if t not in STOP_WORDS_RADIAL]
+
+    word_freq = Counter(all_words)
+    top_words = [w for w, _ in word_freq.most_common(20)]
+
+    categories = list(
+        Category.objects.annotate(total=Count("article"))
+        .filter(total__gt=0)
+        .order_by("-total")
+        .values_list("name", flat=True)[:12]
+    )
+
+    # Comptage mot × catégorie
+    word_cat_counts = {w: Counter() for w in top_words}
+    for title, cat_name in titles:
+        if not cat_name:
+            continue
+        tokens = set(re.findall(r"\b[a-zA-Z]{4,}\b", title.lower()))
+        for w in top_words:
+            if w in tokens:
+                word_cat_counts[w][cat_name] += 1
+
+    words_data = [
+        {
+            "word": w,
+            "by_category": [
+                {"category": cat, "count": word_cat_counts[w].get(cat, 0)}
+                for cat in categories
+            ]
+        }
+        for w in top_words
+    ]
+
+    return JsonResponse({"words": words_data, "categories": categories})
+
+
+# -----------------------
+# PAGES
+# -----------------------
 def contact(request):
     if request.method == "POST":
         name = request.POST.get("name")
@@ -49,17 +203,9 @@ def contact(request):
         message = request.POST.get("message")
 
         url = "https://api.brevo.com/v3/smtp/email"
-
         payload = {
-            "sender": {
-                "name": "Wave",
-                "email": settings.DEFAULT_FROM_EMAIL
-            },
-            "to": [
-                {
-                    "email": settings.DEFAULT_FROM_EMAIL
-                }
-            ],
+            "sender": {"name": "Wave", "email": settings.DEFAULT_FROM_EMAIL},
+            "to": [{"email": settings.DEFAULT_FROM_EMAIL}],
             "subject": f"Message de {name} via Wave",
             "htmlContent": f"""
                 <h3>Nouveau message</h3>
@@ -68,30 +214,26 @@ def contact(request):
                 <p><b>Message:</b><br>{message}</p>
             """
         }
-
         headers = {
             "accept": "application/json",
             "api-key": settings.BREVO_API_KEY,
             "content-type": "application/json"
         }
-
         try:
             response = requests.post(url, json=payload, headers=headers)
-
-            # 🔥 DEBUG IMPORTANT
             print("STATUS:", response.status_code)
             print("RESPONSE:", response.text)
-
             if response.status_code == 201:
                 messages.success(request, "Message envoyé ✔️")
             else:
                 messages.error(request, f"Erreur Brevo: {response.text}")
-
         except Exception as e:
             print("ERREUR EXCEPTION:", repr(e))
             messages.error(request, f"Erreur technique: {e}")
 
     return render(request, "kobe_wave/contact.html")
+
+
 def project(request):
     return render(request, "kobe_wave/project.html")
 
@@ -131,21 +273,15 @@ def custom_500(request):
 # -----------------------
 # DASHBOARD
 # -----------------------
-
-
 def dashboard(request):
-
-    # ── Catégories ──────────────────────────────────────────────
     categories = Category.objects.annotate(total=Count("article")).order_by("-total")
     cat_labels = [c.name for c in categories]
     cat_data = [c.total for c in categories]
 
-    # ── Top 10 catégories (camembert) ───────────────────────────
     top10_cats = categories[:10]
     pie_labels = [c.name for c in top10_cats]
     pie_data = [c.total for c in top10_cats]
 
-    # ── Top 10 auteurs ──────────────────────────────────────────
     top_authors = (
         Article.objects.values("author")
         .annotate(total=Count("id_articles"))
@@ -154,12 +290,10 @@ def dashboard(request):
     author_labels = [a["author"] or "Inconnu" for a in top_authors]
     author_data = [a["total"] for a in top_authors]
 
-    # ── Images par année ────────────────────────────────────────
     images_by_year = Image.objects.values("year").annotate(total=Count("id_image")).order_by("year")
     year_labels = [str(i["year"]) for i in images_by_year]
     year_data = [i["total"] for i in images_by_year]
 
-    # ── Articles par année ──────────────────────────────────────
     articles_by_year = (
         Article.objects.values("created_at__year")
         .annotate(total=Count("id_articles"))
@@ -168,9 +302,7 @@ def dashboard(request):
     art_year_labels = [str(a["created_at__year"]) for a in articles_by_year]
     art_year_data = [a["total"] for a in articles_by_year]
 
-    # ── Articles par mois ───────────────────────────────────────
     months = list(calendar.month_name)[1:]
-
     articles_by_month = (
         Article.objects.values("created_at__month")
         .annotate(total=Count("id_articles"))
@@ -181,7 +313,6 @@ def dashboard(request):
         month_map[row["created_at__month"]] = row["total"]
     month_data = [month_map[i] for i in range(1, 13)]
 
-    # ── Couleurs dominantes des images ──────────────────────────
     top_colors = (
         Image.objects.values("hexadecimal")
         .annotate(total=Count("id_image"))
@@ -190,7 +321,6 @@ def dashboard(request):
     color_labels = [c["hexadecimal"] or "#cccccc" for c in top_colors]
     color_data = [c["total"] for c in top_colors]
 
-    # ── Stats globaux ───────────────────────────────────────────
     article_count = Article.objects.count()
     category_count = Category.objects.count()
     image_count = Image.objects.count()
@@ -202,7 +332,6 @@ def dashboard(request):
         "avg_articles_per_category": round(article_count / max(category_count, 1), 2),
     }
 
-    # ── Context ─────────────────────────────────────────────────
     context = {
         "stats": stats,
         "cat_labels": json.dumps(cat_labels or []),
@@ -224,7 +353,7 @@ def dashboard(request):
 
 
 # -----------------------
-# 🏠 HOME
+# HOME
 # -----------------------
 class HomeView(TemplateView):
     template_name = "kobe_wave/home.html"
@@ -232,7 +361,6 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # ── KPI ─────────────────────────────────────────────────
         article_count = Article.objects.count()
         category_count = Category.objects.count()
         image_count = Image.objects.count()
@@ -242,17 +370,14 @@ class HomeView(TemplateView):
         context["nb_categories"] = category_count
         context["avg_per_cat"] = round(article_count / max(category_count, 1), 2)
 
-        # ── Catégories ──────────────────────────────────────────
         categories = Category.objects.annotate(total=Count("article")).order_by("-total")
         context["cat_labels"] = json.dumps([c.name for c in categories] or [])
         context["cat_data"] = json.dumps([c.total for c in categories] or [])
 
-        # ── Top 10 catégories (camembert) ───────────────────────
         top10 = categories[:10]
         context["pie_labels"] = json.dumps([c.name for c in top10] or [])
         context["pie_data"] = json.dumps([c.total for c in top10] or [])
 
-        # ── Top 10 auteurs ──────────────────────────────────────
         top_authors = (
             Article.objects.values("author")
             .annotate(total=Count("id_articles"))
@@ -261,14 +386,12 @@ class HomeView(TemplateView):
         context["author_labels"] = json.dumps([a["author"] or "Inconnu" for a in top_authors] or [])
         context["author_data"] = json.dumps([a["total"] for a in top_authors] or [])
 
-        # ── Images par année ────────────────────────────────────
         images_by_year = (
             Image.objects.values("year").annotate(total=Count("id_image")).order_by("year")
         )
         context["year_labels"] = json.dumps([str(i["year"]) for i in images_by_year] or [])
         context["year_data"] = json.dumps([i["total"] for i in images_by_year] or [])
 
-        # ── Articles par année ──────────────────────────────────
         articles_by_year = (
             Article.objects.values("created_at__year")
             .annotate(total=Count("id_articles"))
@@ -279,7 +402,6 @@ class HomeView(TemplateView):
         )
         context["art_year_data"] = json.dumps([a["total"] for a in articles_by_year] or [])
 
-        # ── Articles par mois ───────────────────────────────────
         months = list(calendar.month_name)[1:]
         articles_by_month = (
             Article.objects.values("created_at__month")
@@ -292,7 +414,6 @@ class HomeView(TemplateView):
         context["months"] = json.dumps(months)
         context["month_data"] = json.dumps([month_map[i] for i in range(1, 13)])
 
-        # ── Couleurs dominantes ──────────────────────────────────
         top_colors = (
             Image.objects.values("hexadecimal")
             .annotate(total=Count("id_image"))
@@ -307,7 +428,7 @@ class HomeView(TemplateView):
 
 
 # -----------------------
-# 📰 ARTICLES LIST
+# ARTICLES LIST
 # -----------------------
 class ArticleListView(ListView):
     model = Article
@@ -336,7 +457,6 @@ class ArticleListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context["q"] = self.q
         context["selected_category"] = self.selected_category
         context["selected_year"] = self.selected_year
@@ -348,25 +468,16 @@ class ArticleListView(ListView):
             .order_by("created_at__year")
         )
         context["months"] = {
-            1: "January",
-            2: "February",
-            3: "March",
-            4: "April",
-            5: "May",
-            6: "June",
-            7: "July",
-            8: "August",
-            9: "September",
-            10: "October",
-            11: "November",
-            12: "December",
+            1: "January", 2: "February", 3: "March", 4: "April",
+            5: "May", 6: "June", 7: "July", 8: "August",
+            9: "September", 10: "October", 11: "November", 12: "December",
         }
         context["total_articles"] = self.get_queryset().count()
         return context
 
 
 # -----------------------
-# 📰 ARTICLE DETAIL
+# ARTICLE DETAIL
 # -----------------------
 class ArticleDetailView(DetailView):
     model = Article
@@ -375,7 +486,7 @@ class ArticleDetailView(DetailView):
 
 
 # -----------------------
-# 🖼️ IMAGES LIST
+# IMAGES LIST
 # -----------------------
 class ImageListView(ListView):
     model = Image
@@ -385,7 +496,7 @@ class ImageListView(ListView):
 
 
 # -----------------------
-# 📁 CATEGORY DETAIL
+# CATEGORY DETAIL
 # -----------------------
 class CategoryDetailView(DetailView):
     model = Category
@@ -399,24 +510,12 @@ class CategoryDetailView(DetailView):
 
 
 def imaginaries(request):
-
-    # ── Catégories tech ciblées ──────────────────────────────────
     TECH_CATS = [
-        "Science",
-        "Security",
-        "Artificial Intelligence",
-        "Transportation",
-        "Robots",
-        "Cloud Computing",
-        "Apps",
-        "Phones",
-        "Design",
-        "Business",
-        "Culture",
-        "Gear",
+        "Science", "Security", "Artificial Intelligence", "Transportation",
+        "Robots", "Cloud Computing", "Apps", "Phones", "Design",
+        "Business", "Culture", "Gear",
     ]
 
-    # ── 1. Évolution des catégories tech par année ───────────────
     evo_raw = (
         Article.objects.filter(category__name__in=TECH_CATS)
         .values("created_at__year", "category__name")
@@ -424,7 +523,6 @@ def imaginaries(request):
         .order_by("created_at__year")
     )
 
-    # Restructurer : { année: { catégorie: total } }
     evo_years = sorted(set(r["created_at__year"] for r in evo_raw))
     evo_map = {y: {c: 0 for c in TECH_CATS} for y in evo_years}
     for r in evo_raw:
@@ -433,13 +531,11 @@ def imaginaries(request):
     evo_year_labels = [str(y) for y in evo_years]
     evo_series = [{"name": cat, "data": [evo_map[y][cat] for y in evo_years]} for cat in TECH_CATS]
 
-    # ── 2. Heatmap catégorie × année ─────────────────────────────
     heatmap_data = []
     for yi, year in enumerate(evo_years):
         for ci, cat in enumerate(TECH_CATS):
             heatmap_data.append([yi, ci, evo_map[year].get(cat, 0)])
 
-    # ── 3. Radar des thèmes tech (volumes globaux) ───────────────
     radar_totals = (
         Article.objects.filter(category__name__in=TECH_CATS)
         .values("category__name")
@@ -449,127 +545,20 @@ def imaginaries(request):
     radar_max = max(radar_map.values(), default=1)
     radar_data = [radar_map.get(c, 0) for c in TECH_CATS]
 
-    # ── 4. Nuage de mots (titres d'articles) ─────────────────────
-    STOP_WORDS = {
-        "the",
-        "a",
-        "an",
-        "is",
-        "in",
-        "on",
-        "at",
-        "to",
-        "for",
-        "of",
-        "and",
-        "or",
-        "but",
-        "it",
-        "its",
-        "this",
-        "that",
-        "with",
-        "are",
-        "was",
-        "be",
-        "as",
-        "by",
-        "from",
-        "has",
-        "have",
-        "how",
-        "what",
-        "why",
-        "when",
-        "who",
-        "will",
-        "can",
-        "about",
-        "up",
-        "out",
-        "not",
-        "no",
-        "so",
-        "do",
-        "if",
-        "your",
-        "you",
-        "we",
-        "our",
-        "they",
-        "their",
-        "my",
-        "new",
-        "get",
-        "than",
-        "more",
-        "all",
-        "into",
-        "over",
-        "after",
-        "just",
-        "now",
-        "like",
-        "other",
-        "then",
-        "could",
-        "would",
-        "should",
-        "there",
-        "been",
-        "were",
-        "which",
-        "even",
-        "most",
-        "also",
-        "back",
-        "make",
-        "made",
-        "may",
-        "one",
-        "two",
-        "three",
-        "first",
-        "last",
-        "here",
-        "still",
-        "us",
-        "its",
-        "he",
-        "she",
-        "his",
-        "her",
-        "im",
-        "its",
-        "been",
-        "does",
-        "did",
-        "had",
-        "via",
-        "say",
-        "says",
-        "want",
-        "need",
-        "use",
-        "used",
-        "using",
-        "look",
-        "way",
-        "time",
-        "year",
+    STOP_WORDS_CLOUD = STOP_WORDS | {
+        "wired", "review", "best", "guide", "inside", "more", "about",
     }
 
     titles = Article.objects.values_list("title", flat=True)[:50000]
     words = []
     for title in titles:
         for word in re.findall(r"\b[a-zA-Z]{4,}\b", str(title).lower()):
-            if word not in STOP_WORDS:
+            if word not in STOP_WORDS_CLOUD:
                 words.append(word)
 
     word_freq = Counter(words).most_common(60)
     wordcloud_data = [{"name": w, "value": c} for w, c in word_freq]
 
-    # ── 5. Couleurs dominantes par catégorie ─────────────────────
     top_cats_for_colors = ["Culture", "Business", "Science", "Security", "Gear"]
     color_by_cat = {}
     for cat in top_cats_for_colors:
@@ -583,7 +572,6 @@ def imaginaries(request):
             {"hex": c["hexadecimal"], "count": c["total"]} for c in colors if c["hexadecimal"]
         ]
 
-    # ── 6. Articles : AI vs Security vs Science par année ────────
     battle_cats = ["Artificial Intelligence", "Security", "Science", "Robots", "Transportation"]
     battle_raw = (
         Article.objects.filter(category__name__in=battle_cats)
@@ -601,26 +589,19 @@ def imaginaries(request):
         {"name": cat, "data": [battle_map[y][cat] for y in battle_years]} for cat in battle_cats
     ]
 
-    # ── Context ──────────────────────────────────────────────────
     context = {
-        # évolution multi-lignes
         "evo_year_labels": json.dumps(evo_year_labels),
         "evo_series": json.dumps(evo_series),
         "tech_cats": json.dumps(TECH_CATS),
-        # heatmap
         "heatmap_data": json.dumps(heatmap_data),
         "heatmap_years": json.dumps(evo_year_labels),
         "heatmap_cats": json.dumps(TECH_CATS),
-        # radar
         "radar_data": json.dumps(radar_data),
         "radar_max": radar_max,
         "radar_cats": json.dumps(TECH_CATS),
-        # nuage de mots
         "wordcloud_data": json.dumps(wordcloud_data),
-        # couleurs par catégorie
         "color_by_cat": json.dumps(color_by_cat),
         "color_cats": json.dumps(top_cats_for_colors),
-        # bataille
         "battle_year_labels": json.dumps(battle_year_labels),
         "battle_series": json.dumps(battle_series),
         "battle_cats": json.dumps(battle_cats),
@@ -630,11 +611,11 @@ def imaginaries(request):
 
 def explore(request):
     categories = (
-    Category.objects
-    .annotate(total=Count("article"))
-    .filter(total__gt=0)
-    .order_by("-total")
-)
+        Category.objects
+        .annotate(total=Count("article"))
+        .filter(total__gt=0)
+        .order_by("-total")
+    )
     context = {
         "categories": json.dumps([c.name for c in categories]),
     }

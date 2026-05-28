@@ -266,6 +266,33 @@ WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 # ── /api/cooccurrence/ ──────────────────────────────────────────
 @api_view(["GET"])
 def api_cooccurrence(request):
+    word = request.GET.get("word", "").lower().strip()
+
+    # ── CAS 1 : ?word=xxx → injection d'un nœud dans le graphe ──
+    if word:
+        articles = Article.objects.filter(title__icontains=word).values_list("title", flat=True)
+        freq = articles.count()
+        if freq == 0:
+            return Response({"nodes": [], "links": [], "value": 0})
+
+        co_counts = Counter()
+        for title in articles.iterator(chunk_size=2000):
+            if not title:
+                continue
+            tokens = set(w for w in WORD_PATTERN.findall(title.lower()) if w not in STOP_WORDS)
+            if word in tokens:
+                for t in tokens:
+                    if t != word:
+                        co_counts[tuple(sorted([word, t]))] += 1
+
+        links = [
+            {"source": p[0], "target": p[1], "value": c}
+            for p, c in co_counts.most_common(20)
+            if c >= 2
+        ]
+        return Response({"value": freq, "links": links})
+
+    # ── CAS 2 : pas de paramètre → graphe initial (comportement existant) ──
     top_n = int(request.GET.get("top", 30))
     word_freq = Counter()
     cooccur = defaultdict(int)
@@ -293,8 +320,6 @@ def api_cooccurrence(request):
         if w1 in top_set and w2 in top_set and count >= 3
     ]
     return Response({"nodes": nodes, "links": links})
-
-
 # ── /api/radial/ ────────────────────────────────────────────────
 @api_view(["GET"])
 def api_radial(request):
