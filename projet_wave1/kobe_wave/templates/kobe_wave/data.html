@@ -61,7 +61,6 @@
     </div>
 
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script>
 const PALETTE = [
@@ -74,14 +73,13 @@ const PALETTE = [
 fetch('/api/cooccurrence/')
     .then(r => r.json())
     .then(data => {
-        const chart = echarts.init(document.getElementById('networkChart'));
+        const chart  = echarts.init(document.getElementById('networkChart'));
         const maxVal = Math.max(...data.nodes.map(n => n.value), 1);
-
-        const PALETTE = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#f97316', '#ec4899'];
+        const NET_PALETTE = ['#6366f1','#3b82f6','#10b981','#f59e0b','#f97316','#ec4899'];
 
         function nodeColor(value) {
-            const tier = Math.floor((value / maxVal) * (PALETTE.length - 1));
-            return PALETTE[Math.min(tier, PALETTE.length - 1)];
+            const tier = Math.floor((value / maxVal) * (NET_PALETTE.length - 1));
+            return NET_PALETTE[Math.min(tier, NET_PALETTE.length - 1)];
         }
 
         chart.setOption({
@@ -89,9 +87,8 @@ fetch('/api/cooccurrence/')
             tooltip: {
                 trigger: 'item',
                 formatter: params => {
-                    if (params.dataType === 'edge') {
+                    if (params.dataType === 'edge')
                         return `<b>${params.data.source} ↔ ${params.data.target}</b><br/>${params.data.value} co-occurrences`;
-                    }
                     return `<b>${params.name}</b><br/>Fréquence : ${params.data.value}`;
                 }
             },
@@ -105,189 +102,162 @@ fetch('/api/cooccurrence/')
                     name: n.id,
                     value: n.value,
                     symbolSize: Math.min(10 + (n.value / maxVal) * 50, 60),
-                    label: {
-                        show: true,
-                        fontSize: 11,
-                        fontWeight: 'bold',
-                        color: '#333',
-                    },
-                    itemStyle: {
-                        color: nodeColor(n.value),
-                        borderColor: '#fff',
-                        borderWidth: 1.5,
-                    }
+                    label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
+                    itemStyle: { color: nodeColor(n.value), borderColor: '#fff', borderWidth: 1.5 }
                 })),
                 links: data.links.map(l => ({
                     source: l.source,
                     target: l.target,
-                    value: l.value,
-                    lineStyle: {
-                        width: 1 + Math.log(l.value || 1),
-                        color: '#aaaaaa',
-                        opacity: 0.4,
-                        curveness: 0.3,
-                    }
+                    value:  l.value,
+                    lineStyle: { width: 1 + Math.log(l.value || 1), color: '#aaaaaa', opacity: 0.4, curveness: 0.3 }
                 })),
-                lineStyle: { width: 4, opacity: 0.4, color: '#aaaaaa' },
                 emphasis: {
                     focus: 'adjacency',
                     lineStyle: { width: 4, color: '#f97316', opacity: 1 },
-                    itemStyle: { borderWidth: 3 },
-                },
+                    itemStyle: { borderWidth: 3 }
+                }
             }]
         });
 
         window.addEventListener('resize', () => chart.resize());
 
-        // Hover sur un lien → articles
+        // ── Highlight helper ─────────────────────────────────────
+        function highlightNode(word, nodes, links) {
+            const neighbors = new Set([word]);
+            links.forEach(l => {
+                if (l.source === word) neighbors.add(l.target);
+                if (l.target === word) neighbors.add(l.source);
+            });
+            chart.setOption({
+                series: [{
+                    data: nodes.map(n => ({
+                        ...n,
+                        itemStyle: {
+                            color:   n.name === word ? '#facc15' : neighbors.has(n.name) ? nodeColor(n.value) : '#cccccc',
+                            opacity: neighbors.has(n.name) ? 1 : 0.15,
+                            borderColor: '#fff', borderWidth: 1.5
+                        }
+                    })),
+                    links: links.map(l => ({
+                        ...l,
+                        lineStyle: {
+                            color:   (l.source === word || l.target === word) ? '#f97316' : '#aaaaaa',
+                            opacity: (l.source === word || l.target === word) ? 1 : 0.1,
+                            width:   (l.source === word || l.target === word) ? 3 : 1,
+                            curveness: 0.3
+                        }
+                    }))
+                }]
+            });
+        }
+
+        // ── Hover lien → articles ────────────────────────────────
         chart.on('mouseover', { dataType: 'edge' }, params => {
-            const w1 = params.data.source;
-            const w2 = params.data.target;
+            const w1 = params.data.source, w2 = params.data.target;
             document.getElementById('networkWord').textContent = `${w1} ↔ ${w2}`;
             document.getElementById('networkPanel').style.display = 'block';
             document.getElementById('networkArticles').innerHTML = '<p class="text-muted small">Chargement...</p>';
-
             fetch(`/api/articles-cooccurrence/?w1=${w1}&w2=${w2}`)
                 .then(r => r.json())
                 .then(articles => {
-                    document.getElementById('networkArticles').innerHTML = `
-                        <p class="fw-semibold text-center" style="color:#f97316;">${w1} ↔ ${w2}</p>
-                        <p class="text-muted small text-center">${articles.length} titles found</p>
-                    ` + (articles.length
-                        ? articles.slice(0, 15).map(a => `
-                            <a href="/articles/${a.id_articles}/" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-semibold">${a.title}</div>
-                                    <small class="text-muted">${a.author || 'Unknown'}</small>
-                                </div>
-                                <span class="badge rounded-pill" style="background:#f97316; color:white;">${a.id_articles}</span>
-                            </a>`).join('')
-                        : '<p class="text-muted small text-center">Aucun article trouvé.</p>'
-                    );
+                    document.getElementById('networkArticles').innerHTML =
+                        `<p class="fw-semibold text-center" style="color:#f97316;">${w1} ↔ ${w2}</p>
+                         <p class="text-muted small text-center">${articles.length} titles found</p>` +
+                        (articles.length
+                            ? articles.slice(0,15).map(a => `
+                                <a href="/articles/${a.id_articles}/" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div><div class="fw-semibold">${a.title}</div><small class="text-muted">${a.author || 'Unknown'}</small></div>
+                                    <span class="badge rounded-pill" style="background:#f97316;color:white;">${a.id_articles}</span>
+                                </a>`).join('')
+                            : '<p class="text-muted small text-center">Aucun article trouvé.</p>');
                 });
         });
 
-        // Clic sur un nœud → articles
+        // ── Clic nœud → articles ─────────────────────────────────
         chart.on('click', { dataType: 'node' }, params => {
             const word = params.name;
             document.getElementById('networkWord').textContent = `"${word}"`;
             document.getElementById('networkPanel').style.display = 'block';
             document.getElementById('networkArticles').innerHTML = '<p class="text-muted small">Chargement...</p>';
-
             fetch(`/api/articles/?q=${word}`)
                 .then(r => r.json())
                 .then(articles => {
-                    document.getElementById('networkArticles').innerHTML = `
-                        <p class="fw-semibold text-center" style="color:#f97316;">"${word}"</p>
-                        <p class="text-muted small text-center">${articles.length} titles found</p>
-                    ` + (articles.length
-                        ? articles.slice(0, 15).map(a => `
-                            <a href="/articles/${a.id_articles}/" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-semibold">${a.title}</div>
-                                    <small class="text-muted">${a.author || 'Unknown'}</small>
-                                </div>
-                                <span class="badge rounded-pill" style="background:#f97316; color:white;">${a.id_articles}</span>
-                            </a>`).join('')
-                        : '<p class="text-muted small text-center">Aucun article trouvé.</p>'
-                    );
+                    document.getElementById('networkArticles').innerHTML =
+                        `<p class="fw-semibold text-center" style="color:#f97316;">"${word}"</p>
+                         <p class="text-muted small text-center">${articles.length} titles found</p>` +
+                        (articles.length
+                            ? articles.slice(0,15).map(a => `
+                                <a href="/articles/${a.id_articles}/" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div><div class="fw-semibold">${a.title}</div><small class="text-muted">${a.author || 'Unknown'}</small></div>
+                                    <span class="badge rounded-pill" style="background:#f97316;color:white;">${a.id_articles}</span>
+                                </a>`).join('')
+                            : '<p class="text-muted small text-center">Aucun article trouvé.</p>');
                 });
         });
 
-        // Recherche + highlight
-       // Recherche + highlight OU injection d'un nouveau nœud
-document.getElementById('btnSearch').addEventListener('click', () => {
-    const word = document.getElementById('searchWord').value.trim().toLowerCase();
-    if (!word) return;
-
-    const option   = chart.getOption();
-    let   nodes    = option.series[0].data;
-    let   links    = option.series[0].links;
-
-    const existing = nodes.find(n => n.name === word);
-
-    if (existing) {
-        // ── Mot déjà présent → simple highlight ──────────────────
-        highlightNode(word, nodes, links);
-    } else {
-        // ── Mot absent → on le récupère depuis l'API et on l'injecte
-        fetch(`/api/cooccurrence/?word=${encodeURIComponent(word)}`)
-            .then(r => r.json())
-            .then(data => {
-                if (!data.links || data.links.length === 0) {
-                    alert(`"${word}" n'a aucune co-occurrence dans le corpus.`);
-                    return;
-                }
-
-                // Nouveau nœud jaune, marqué comme custom
-                const newNode = {
-                    name: word,
-                    value: data.value || 1,
-                    symbolSize: 28,
-                    _custom: true,          // tag pour le Reset
-                    label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
-                    itemStyle: { color: '#facc15', borderColor: '#fff', borderWidth: 2 }
-                };
-
-                // Nouveaux liens (seulement vers des nœuds déjà présents)
-                const existingNames = new Set(nodes.map(n => n.name));
-                const newLinks = data.links
-                    .filter(l => existingNames.has(l.source) || existingNames.has(l.target))
-                    .map(l => ({
-                        source: l.source,
-                        target: l.target,
-                        value:  l.value,
-                        _custom: true,
-                        lineStyle: {
-                            width:   1 + Math.log(l.value || 1),
-                            color:   '#facc15',
-                            opacity: 0.8,
-                            curveness: 0.3,
-                        }
-                    }));
-
-                nodes = [...nodes, newNode];
-                links = [...links, ...newLinks];
-
-                chart.setOption({ series: [{ data: nodes, links }] });
+        // ── Recherche / injection ────────────────────────────────
+        document.getElementById('btnSearch').addEventListener('click', () => {
+            const word = document.getElementById('searchWord').value.trim().toLowerCase();
+            if (!word) return;
+            const option = chart.getOption();
+            let nodes = option.series[0].data;
+            let links = option.series[0].links;
+            const existing = nodes.find(n => n.name === word);
+            if (existing) {
                 highlightNode(word, nodes, links);
-            })
-            .catch(() => alert(`Impossible de charger "${word}".`));
-    }
-});
+            } else {
+                fetch(`/api/cooccurrence/?word=${encodeURIComponent(word)}`)
+                    .then(r => r.json())
+                    .then(apiData => {
+                        if (!apiData.links || apiData.links.length === 0) {
+                            alert(`"${word}" n'a aucune co-occurrence dans le corpus.`);
+                            return;
+                        }
+                        const newNode = {
+                            name: word, value: apiData.value || 1, symbolSize: 28, _custom: true,
+                            label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
+                            itemStyle: { color: '#facc15', borderColor: '#fff', borderWidth: 2 }
+                        };
+                        const existingNames = new Set(nodes.map(n => n.name));
+                        const newLinks = apiData.links
+                            .filter(l => existingNames.has(l.source) || existingNames.has(l.target))
+                            .map(l => ({
+                                source: l.source, target: l.target, value: l.value, _custom: true,
+                                lineStyle: { width: 1 + Math.log(l.value || 1), color: '#facc15', opacity: 0.8, curveness: 0.3 }
+                            }));
+                        nodes = [...nodes, newNode];
+                        links = [...links, ...newLinks];
+                        chart.setOption({ series: [{ data: nodes, links }] });
+                        highlightNode(word, nodes, links);
+                    })
+                    .catch(() => alert(`Impossible de charger "${word}".`));
+            }
+        });
 
-// ── Factorisation du highlight ────────────────────────────────────
-function highlightNode(word, nodes, links) {
-    const neighbors = new Set([word]);
-    links.forEach(l => {
-        if (l.source === word) neighbors.add(l.target);
-        if (l.target === word) neighbors.add(l.source);
-    });
+        // ── Reset ────────────────────────────────────────────────
+        document.getElementById('btnReset').addEventListener('click', () => {
+            document.getElementById('searchWord').value = '';
+            document.getElementById('networkPanel').style.display = 'none';
+            document.getElementById('networkArticles').innerHTML = '';
+            const option = chart.getOption();
+            const nodes  = option.series[0].data.filter(n => !n._custom);
+            const links  = option.series[0].links.filter(l => !l._custom);
+            chart.setOption({
+                series: [{
+                    data: nodes.map(n => ({
+                        ...n,
+                        itemStyle: { color: nodeColor(n.value), opacity: 1, borderColor: '#fff', borderWidth: 1.5 }
+                    })),
+                    links: links.map(l => ({
+                        ...l,
+                        lineStyle: { color: '#aaaaaa', opacity: 0.4, width: 1 + Math.log(l.value || 1), curveness: 0.3 }
+                    }))
+                }]
+            });
+        });
 
-    chart.setOption({
-        series: [{
-            data: nodes.map(n => ({
-                ...n,
-                itemStyle: {
-                    ...n.itemStyle,
-                    color:   n.name === word ? '#facc15'
-                           : neighbors.has(n.name) ? nodeColor(n.value)
-                           : '#cccccc',
-                    opacity: neighbors.has(n.name) ? 1 : 0.15,
-                }
-            })),
-            links: links.map(l => ({
-                ...l,
-                lineStyle: {
-                    ...l.lineStyle,
-                    color:   (l.source === word || l.target === word) ? '#f97316' : '#aaaaaa',
-                    opacity: (l.source === word || l.target === word) ? 1 : 0.1,
-                    width:   (l.source === word || l.target === word) ? 3 : 1,
-                }
-            }))
-        }]
-    });
-}
+    }); // ← fermeture du fetch co-occurrence 
+
 // ── Radial Chart ─────────────────────────────────────────────────
 const radialChart = echarts.init(document.getElementById('radialChart'));
 window.addEventListener('resize', () => radialChart.resize());
@@ -306,21 +276,20 @@ fetch('/api/radial/')
                 type: 'category',
                 data: words.map(w => w.word),
                 startAngle: 90,
-                axisLabel: { fontSize: 12, fontWeight: 'bold' },
+                axisLabel: { fontSize: 12, fontWeight: 'bold' }
             },
             radiusAxis: { type: 'value' },
-          series: cats.map((cat, ci) => ({
-    type: 'bar',
-    name: cat,
-    coordinateSystem: 'polar',
-    stack: 'total',
-    color: PALETTE[ci % PALETTE.length],
-
-    data: words.map(w => {
-        const val = w.by_category.find(b => b.category === cat)?.count || 0;
-        return val > 0 ? val : null;
-    }).filter(v => v !== null)
-})),
+            series: cats.map((cat, ci) => ({
+                type: 'bar',
+                name: cat,
+                coordinateSystem: 'polar',
+                stack: 'total',
+                color: PALETTE[ci % PALETTE.length],
+                data: words.map(w => {
+                    const val = w.by_category.find(b => b.category === cat)?.count || 0;
+                    return val > 0 ? val : null;
+                }).filter(v => v !== null)
+            }))
         });
     });
 </script>
