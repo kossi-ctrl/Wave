@@ -263,36 +263,21 @@ STOP_WORDS = frozenset(
 WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 
 
-# ── /api/cooccurrence/ ──────────────────────────────────────────
+from django.core.cache import cache  # ajoute cet import en haut
+
 @api_view(["GET"])
 def api_cooccurrence(request):
     word = request.GET.get("word", "").lower().strip()
 
-    # ── CAS 1 : ?word=xxx → injection d'un nœud dans le graphe ──
     if word:
-        articles = Article.objects.filter(title__icontains=word).values_list("title", flat=True)
-        freq = articles.count()
-        if freq == 0:
-            return Response({"nodes": [], "links": [], "value": 0})
+        # ... ton code existant pour CAS 1 (déjà rapide, pas touché)
+        pass
 
-        co_counts = Counter()
-        for title in articles.iterator(chunk_size=2000):
-            if not title:
-                continue
-            tokens = set(w for w in WORD_PATTERN.findall(title.lower()) if w not in STOP_WORDS)
-            if word in tokens:
-                for t in tokens:
-                    if t != word:
-                        co_counts[tuple(sorted([word, t]))] += 1
+    # ── CAS 2 : résultat mis en cache 1 heure ──
+    cached = cache.get("cooccurrence_graph")
+    if cached:
+        return Response(cached)
 
-        links = [
-            {"source": p[0], "target": p[1], "value": c}
-            for p, c in co_counts.most_common(20)
-            if c >= 2
-        ]
-        return Response({"value": freq, "links": links})
-
-    # ── CAS 2 : pas de paramètre → graphe initial (comportement existant) ──
     top_n = int(request.GET.get("top", 30))
     word_freq = Counter()
     cooccur = defaultdict(int)
@@ -310,16 +295,12 @@ def api_cooccurrence(request):
     top_words = [w for w, _ in word_freq.most_common(top_n)]
     top_set = set(top_words)
 
-    nodes = [
-        {"id": w, "name": w, "value": word_freq[w], "symbolSize": min(10 + word_freq[w] / 500, 50)}
-        for w in top_words
-    ]
-    links = [
-        {"source": w1, "target": w2, "value": count}
-        for (w1, w2), count in cooccur.items()
-        if w1 in top_set and w2 in top_set and count >= 3
-    ]
-    return Response({"nodes": nodes, "links": links})
+    nodes = [...]  # ton code existant
+    links = [...]  # ton code existant
+
+    result = {"nodes": nodes, "links": links}
+    cache.set("cooccurrence_graph", result, 60 * 60)  # cache 1h
+    return Response(result)
 # ── /api/radial/ ────────────────────────────────────────────────
 @api_view(["GET"])
 def api_radial(request):
