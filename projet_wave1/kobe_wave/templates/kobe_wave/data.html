@@ -195,82 +195,99 @@ fetch('/api/cooccurrence/')
         });
 
         // Recherche + highlight
-        document.getElementById('btnSearch').addEventListener('click', () => {
-            const word = document.getElementById('searchWord').value.trim().toLowerCase();
-            if (!word) return;
+       // Recherche + highlight OU injection d'un nouveau nœud
+document.getElementById('btnSearch').addEventListener('click', () => {
+    const word = document.getElementById('searchWord').value.trim().toLowerCase();
+    if (!word) return;
 
-            const option = chart.getOption();
-            const nodes = option.series[0].data;
-            const links = option.series[0].links;
+    const option   = chart.getOption();
+    let   nodes    = option.series[0].data;
+    let   links    = option.series[0].links;
 
-            const found = nodes.find(n => n.name === word);
-            if (!found) {
-                alert(`"${word}" n'existe pas dans le graphe.`);
-                return;
-            }
+    const existing = nodes.find(n => n.name === word);
 
-            const neighbors = new Set([word]);
-            links.forEach(l => {
-                if (l.source === word) neighbors.add(l.target);
-                if (l.target === word) neighbors.add(l.source);
-            });
+    if (existing) {
+        // ── Mot déjà présent → simple highlight ──────────────────
+        highlightNode(word, nodes, links);
+    } else {
+        // ── Mot absent → on le récupère depuis l'API et on l'injecte
+        fetch(`/api/cooccurrence/?word=${encodeURIComponent(word)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.links || data.links.length === 0) {
+                    alert(`"${word}" n'a aucune co-occurrence dans le corpus.`);
+                    return;
+                }
 
-            chart.setOption({
-                series: [{
-                    data: nodes.map(n => ({
-                        ...n,
-                        itemStyle: {
-                            color: n.name === word ? '#facc15' : neighbors.has(n.name) ? nodeColor(n.value) : '#cccccc',
-                            opacity: neighbors.has(n.name) ? 1 : 0.15,
-                            borderColor: '#fff',
-                            borderWidth: 1.5,
-                        }
-                    })),
-                    links: links.map(l => ({
-                        ...l,
+                // Nouveau nœud jaune, marqué comme custom
+                const newNode = {
+                    name: word,
+                    value: data.value || 1,
+                    symbolSize: 28,
+                    _custom: true,          // tag pour le Reset
+                    label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
+                    itemStyle: { color: '#facc15', borderColor: '#fff', borderWidth: 2 }
+                };
+
+                // Nouveaux liens (seulement vers des nœuds déjà présents)
+                const existingNames = new Set(nodes.map(n => n.name));
+                const newLinks = data.links
+                    .filter(l => existingNames.has(l.source) || existingNames.has(l.target))
+                    .map(l => ({
+                        source: l.source,
+                        target: l.target,
+                        value:  l.value,
+                        _custom: true,
                         lineStyle: {
-                            color: l.source === word || l.target === word ? '#f97316' : '#aaaaaa',
-                            opacity: l.source === word || l.target === word ? 1 : 0.1,
-                            width: l.source === word || l.target === word ? 3 : 1,
+                            width:   1 + Math.log(l.value || 1),
+                            color:   '#facc15',
+                            opacity: 0.8,
+                            curveness: 0.3,
                         }
-                    }))
-                }]
-            });
-        });
+                    }));
 
-        // Reset
-        document.getElementById('btnReset').addEventListener('click', () => {
-            document.getElementById('searchWord').value = '';
-            document.getElementById('networkPanel').style.display = 'none';
-            document.getElementById('networkArticles').innerHTML = '';
+                nodes = [...nodes, newNode];
+                links = [...links, ...newLinks];
 
-            const option = chart.getOption();
-            const nodes = option.series[0].data;
-            const links = option.series[0].links;
+                chart.setOption({ series: [{ data: nodes, links }] });
+                highlightNode(word, nodes, links);
+            })
+            .catch(() => alert(`Impossible de charger "${word}".`));
+    }
+});
 
-            chart.setOption({
-                series: [{
-                    data: nodes.map(n => ({
-                        ...n,
-                        itemStyle: {
-                            color: nodeColor(n.value),
-                            opacity: 1,
-                            borderColor: '#fff',
-                            borderWidth: 1.5,
-                        }
-                    })),
-                    links: links.map(l => ({
-                        ...l,
-                        lineStyle: {
-                            color: '#aaaaaa',
-                            opacity: 0.4,
-                            width: 1 + Math.log(l.value || 1),
-                        }
-                    }))
-                }]
-            });
-        });
+// ── Factorisation du highlight ────────────────────────────────────
+function highlightNode(word, nodes, links) {
+    const neighbors = new Set([word]);
+    links.forEach(l => {
+        if (l.source === word) neighbors.add(l.target);
+        if (l.target === word) neighbors.add(l.source);
     });
+
+    chart.setOption({
+        series: [{
+            data: nodes.map(n => ({
+                ...n,
+                itemStyle: {
+                    ...n.itemStyle,
+                    color:   n.name === word ? '#facc15'
+                           : neighbors.has(n.name) ? nodeColor(n.value)
+                           : '#cccccc',
+                    opacity: neighbors.has(n.name) ? 1 : 0.15,
+                }
+            })),
+            links: links.map(l => ({
+                ...l,
+                lineStyle: {
+                    ...l.lineStyle,
+                    color:   (l.source === word || l.target === word) ? '#f97316' : '#aaaaaa',
+                    opacity: (l.source === word || l.target === word) ? 1 : 0.1,
+                    width:   (l.source === word || l.target === word) ? 3 : 1,
+                }
+            }))
+        }]
+    });
+}
 // ── Radial Chart ─────────────────────────────────────────────────
 const radialChart = echarts.init(document.getElementById('radialChart'));
 window.addEventListener('resize', () => radialChart.resize());
