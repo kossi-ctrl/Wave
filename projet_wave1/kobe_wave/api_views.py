@@ -395,24 +395,33 @@ def api_stats(request):
 
 # ── /api/wordcloud/ ─────────────────────────────────────────────
 @api_view(["GET"])
-def api_wordcloud(request):
-    category = request.GET.get("category")
-    qs = Article.objects.all()
-    if category:
-        qs = qs.filter(category__name__icontains=category)
+def api_covers(request):
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    cat_map = defaultdict(set)
+    for row in Article.objects.filter(
+        category__isnull=False
+    ).values("image_id", "category_id"):
+        cat_map[row["image_id"]].add(row["category_id"])
 
-    words = []
-    for title in qs.values_list("title", flat=True).iterator(chunk_size=2000):
-        if not title:
-            continue
-        for word in WORD_PATTERN.findall(title.lower()):
-            if word not in STOP_WORDS:
-                words.append(word)
+    images = Image.objects.only(
+        "id_image", "filename", "year", "month",
+        "hexadecimal", "hue", "sat", "bri"
+    ).order_by("year", "month")
 
-    freq = Counter(words).most_common(60)
-    return Response([{"name": w, "value": c} for w, c in freq])
-
-
+    return Response([
+        {
+            "id": img.id_image,
+            "url": f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{img.filename}.jpg",
+            "year": img.year,
+            "month": img.month,
+            "hex": img.hexadecimal or "#cccccc",
+            "hue": img.hue,
+            "sat": img.sat,
+            "bri": img.bri,
+            "categories": list(cat_map.get(img.id_image, [])),
+        }
+        for img in images
+    ])
 # ── /api/colors/ ────────────────────────────────────────────────
 @api_view(["GET"])
 def api_colors(request):
