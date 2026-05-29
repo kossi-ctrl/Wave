@@ -4,410 +4,191 @@
 {% block title %}Timeline{% endblock %}
 
 {% block content %}
+<div class="container py-5">
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap');
+     <h1 class="fw-bold mb-4" style="color:white;">Timeline</h1>
 
-  :root {
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --surface2: #181818;
-    --border: rgba(255,255,255,0.07);
-    --text: #f0ede8;
-    --muted: rgba(240,237,232,0.45);
-    --accent: #e8c547;
-    --accent2: #4fc3f7;
-    --radius: 12px;
-  }
-
-  .tl-wrap {
-    padding: 60px 32px 100px;
-    max-width: 1280px;
-    margin: 0 auto;
-    font-family: 'DM Mono', monospace;
-    color: var(--text);
-  }
-
-  .tl-header {
-    display: flex;
-    align-items: flex-end;
-    gap: 24px;
-    margin-bottom: 64px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 28px;
-  }
-  .tl-header h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(56px, 8vw, 96px);
-    line-height: 1;
-    letter-spacing: 0.04em;
-    margin: 0;
-    color: var(--text);
-  }
-  .tl-header .tl-tag {
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding-bottom: 8px;
-  }
-
-  .section-label {
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .tl-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 28px 28px 24px;
-    position: relative;
-  }
-
-  .tl-row {
-    display: grid;
-    gap: 24px;
-    margin-bottom: 80px;
-  }
-  .tl-row.r-color { grid-template-columns: 1fr 2fr; align-items: start; }
-  .tl-row.r-heat  { grid-template-columns: 2fr 1fr; align-items: start; }
-
-  @media (max-width: 860px) {
-    .tl-row.r-color,
-    .tl-row.r-heat  { grid-template-columns: 1fr; }
-    .tl-row.r-heat .tl-side { order: -1; }
-  }
-
-  .tl-side { padding-top: 4px; }
-  .tl-side p {
-    font-size: 13px;
-    line-height: 1.8;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  .card-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-  }
-  .card-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 0.06em;
-    color: var(--text);
-  }
-  .card-subtitle {
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 20px;
-    letter-spacing: 0.04em;
-  }
-
-  .tl-select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .tl-select:hover { border-color: var(--accent); }
-  .tl-select option { background: #1a1a1a; }
-
-  .mode-btns {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 20px;
-  }
-  .mode-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 6px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .mode-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-  .mode-btn.active {
-    background: var(--accent2);
-    border-color: var(--accent2);
-    color: #000;
-  }
-
-  #coverPreview {
-    display: none;
-    position: absolute;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-    z-index: 999;
-    text-align: center;
-    pointer-events: none;
-  }
-  #coverPreview img {
-    width: 110px;
-    height: auto;
-    border-radius: 6px;
-    display: block;
-  }
-  #coverPreviewLabel {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 8px;
-    letter-spacing: 0.06em;
-  }
-</style>
-
-<div class="tl-wrap">
-
-  <div class="tl-header">
-    <h1>Timeline</h1>
-    <span class="tl-tag">Wired Magazine · 1993 – 2025</span>
-  </div>
-
-  <!-- SECTION 1 : Color Analysis -->
-  <div class="section-label">01 — Color Analysis</div>
-  <div class="tl-row r-color">
-
-    <div class="tl-side">
-      <p>
-        Each dot captures the dominant color of a Wired cover. The horizontal axis is chronological,
-        while the Y axis reflects the metric selected in the dropdown — Hue, Brightness, or Saturation.
-        Switch between metrics to trace when warmer palettes, cooler tones, or brighter highlights took over,
-        revealing quick insights into the visual moods that defined different editorial eras.
-      </p>
+    <!-- ROW 1 : Texte + Color Analysis -->
+    <div class="row mt-4 g-4">
+        <div class="col-md-4">
+            <p style="color:white; text-align:justify;">
+                Each dot captures the dominant color of a Wired cover. The horizontal axis is chronological, while the Y axis reflects the metric selected in the dropdown (Hue, Brightness, or Saturation). Switch between metrics to trace when warmer palettes, cooler tones, or brighter highlights took over, revealing quick insights into the visual moods that defined different editorial eras.
+            </p>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Color Analysis</h5>
+                    <select id="colorMetric" class="form-select form-select-sm" style="width:auto;">
+                        <option value="hue">Hue</option>
+                        <option value="brightness">Brightness</option>
+                        <option value="saturation">Saturation</option>
+                    </select>
+                </div>
+                <p class="text-muted small">Each point represents the dominant color of an image. X axis = year, Y axis = selected metric.</p>
+                <div id="colorChart" style="height:400px;"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="tl-card">
-      <div class="card-header-row">
-        <span class="card-title">Color Analysis</span>
-        <select id="colorMetric" class="tl-select">
-          <option value="hue">Hue</option>
-          <option value="brightness">Brightness</option>
-          <option value="saturation">Saturation</option>
-        </select>
-      </div>
-      <p class="card-subtitle">Each point = dominant color of a cover · X = year · Y = metric</p>
-      <div id="colorChart" style="height:400px;"></div>
-
-      <div id="coverPreview">
-        <img id="coverPreviewImg" src="" alt="cover"/>
-        <div id="coverPreviewLabel"></div>
-      </div>
+    <!-- ROW 2 : Wired's Imaginary Map -->
+    <div class="mt-5 mb-3">
+        <h2 style="color:white;">Wired's Imaginary Map</h2>
     </div>
-
-  </div>
-
-  <!-- SECTION 2 : Imaginary Map -->
-  <div class="section-label">02 — Wired's Imaginary Map</div>
-  <div class="tl-row r-heat">
-
-    <div class="tl-card">
-      <div class="card-header-row">
-        <span class="card-title">Wired's Imaginary Map</span>
-      </div>
-      <p class="card-subtitle">Darker cells = higher frequency · Hover for counts</p>
-      <div class="mode-btns">
-        <button class="mode-btn active" id="modeWords">Words</button>
-        <button class="mode-btn" id="modeCategories">Categories</button>
-        <button class="mode-btn" id="modeAuthors">Authors</button>
-      </div>
-      <div id="imaginaryChart" style="height:450px;"></div>
+    <div class="row g-4">
+        <div class="col-md-8">
+           
+            <div class="card shadow-sm border-0 p-4">
+                <div class="d-flex gap-2 mb-3">
+                    <button class="btn btn-sm btn-light active" id="modeWords">Words</button>
+                    <button class="btn btn-sm btn-light" id="modeCategories">Categories</button>
+                    <button class="btn btn-sm btn-light" id="modeAuthors">Authors</button>
+                </div>
+                <div id="imaginaryChart" style="height:450px;"></div>
+            </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-center">
+            <p style="color:white; text-align:justify;">
+                Switch between “Words”, “Categories”, and “Authors” to repaint the heatmap and its paired timeline. Darker cells flag months where a topic, vocabulary cluster, or contributor spiked above usual levels; lighter cells reveal quieter stretches. Hover over a square to read the precise count, then click a timeline dot to load the stories that triggered that peak. In one glance you can spot editorial obsessions, see when new voices enter the conversation, and track how coverage priorities shift across the archive.
+            </p>
+        </div>
     </div>
-
-    <div class="tl-side">
-      <p>
-        Switch between "Words", "Categories", and "Authors" to repaint the heatmap.
-        Darker cells flag months where a topic, vocabulary cluster, or contributor spiked
-        above usual levels. Hover over a square to read the precise count.
-        In one glance you can spot editorial obsessions, see when new voices enter
-        the conversation, and track how coverage priorities shift across the archive.
-      </p>
-    </div>
-
-  </div>
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
 <script>
-const $ = id => document.getElementById(id);
-
-/* ── COLOR ANALYSIS ── */
-const colorChart = echarts.init($('colorChart'), null, { renderer: 'canvas' });
+    // Color Analysis
+   const colorChart = echarts.init(document.getElementById('colorChart'));
 let colorData = [];
 
 function renderColorChart(metric) {
-  const data = colorData.map(d => ({
-    value: [d.year, d[metric]],
-    itemStyle: { color: d.hex },
-    hex: d.hex,
-    hue: d.hue,
-    saturation: d.saturation,
-    brightness: d.brightness,
-    cover_url: d.cover_url,
-  }));
+    const data = colorData.map(d => ({
+        value: [d.year, d[metric]],
+        itemStyle: { color: d.hex },
+        hex: d.hex, hue: d.hue,
+        saturation: d.saturation, brightness: d.brightness,
+        cover_url: d.cover_url,
+    }));
 
-  colorChart.setOption({
-    backgroundColor: 'transparent',
-    tooltip: {
-      backgroundColor: '#181818',
-      borderColor: 'rgba(255,255,255,0.07)',
-      textStyle: { color: '#f0ede8', fontFamily: 'DM Mono, monospace', fontSize: 12 },
-      formatter: p => `
-        <div style="text-align:center; min-width:120px;">
-          ${p.data.cover_url
-            ? `<img src="${p.data.cover_url}" style="width:90px;height:auto;border-radius:5px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;"/>`
-            : ''}
-          <span style="display:inline-block;width:12px;height:12px;background:${p.data.hex};border-radius:2px;margin-right:6px;vertical-align:middle;"></span>
-          <b>${p.data.hex}</b><br/>
-          <span style="color:rgba(240,237,232,.5)">Year</span> ${p.data.value[0]}<br/>
-          <span style="color:rgba(240,237,232,.5)">H</span> ${p.data.hue}°
-          <span style="color:rgba(240,237,232,.5)"> · S</span> ${p.data.saturation}%
-          <span style="color:rgba(240,237,232,.5)"> · B</span> ${p.data.brightness}%
-        </div>
-      `
-    },
-    grid: { left: 50, right: 20, top: 20, bottom: 40 },
-    xAxis: {
-      type: 'value', name: 'Year', min: 1993, max: 2025,
-      nameLocation: 'middle', nameGap: 28,
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
-      axisLabel: { color: 'rgba(240,237,232,.5)', fontFamily: 'DM Mono', fontSize: 11 },
-      nameTextStyle: { color: 'rgba(240,237,232,.4)', fontFamily: 'DM Mono', fontSize: 11 },
-    },
-    yAxis: {
-      type: 'value',
-      name: metric.charAt(0).toUpperCase() + metric.slice(1),
-      min: 0, max: metric === 'hue' ? 360 : 100,
-      nameLocation: 'middle', nameGap: 38,
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
-      axisLabel: { color: 'rgba(240,237,232,.5)', fontFamily: 'DM Mono', fontSize: 11 },
-      nameTextStyle: { color: 'rgba(240,237,232,.4)', fontFamily: 'DM Mono', fontSize: 11 },
-    },
-    series: [{
-      type: 'scatter', data,
-      symbolSize: 9, opacity: 0.8,
-      emphasis: { scale: 1.6 }
-    }]
-  });
+    colorChart.setOption({
+        tooltip: {
+            formatter: p => `
+                <div style="text-align:center;">
+                    ${p.data.cover_url 
+                        ? `<img src="${p.data.cover_url}" style="width:100px; height:auto; border-radius:4px; margin-bottom:6px; display:block;"/>`
+                        : ''
+                    }
+                    <span style="display:inline-block;width:14px;height:14px;background:${p.data.hex};border-radius:3px;margin-right:6px;vertical-align:middle;"></span>
+                    <b>${p.data.hex}</b><br/>
+                    Year: ${p.data.value[0]}<br/>
+                    Hue: ${p.data.hue}° · Sat: ${p.data.saturation}% · Bri: ${p.data.brightness}%
+                </div>
+            `
+        },
+        xAxis: { type: 'value', name: 'Year', min: 1993, max: 2025, nameLocation: 'middle', nameGap: 30 },
+        yAxis: {
+            type: 'value',
+            name: metric.charAt(0).toUpperCase() + metric.slice(1),
+            min: 0, max: metric === 'hue' ? 360 : 100,
+            nameLocation: 'middle', nameGap: 40,
+        },
+        series: [{ type: 'scatter', data: data, symbolSize: 8, opacity: 0.7 }]
+    });
 }
-
 colorChart.on('click', function(params) {
-  const preview = $('coverPreview');
-  const img     = $('coverPreviewImg');
-  const label   = $('coverPreviewLabel');
-  if (!params.data || !params.data.cover_url) return;
-  img.src = params.data.cover_url;
-  label.textContent = `${params.data.value[0]} · ${params.data.hex}`;
-  preview.style.left    = (params.event.offsetX + 18) + 'px';
-  preview.style.top     = (params.event.offsetY - 70) + 'px';
-  preview.style.display = 'block';
+    const preview = document.getElementById('coverPreview');
+    const img = document.getElementById('coverPreviewImg');
+    const label = document.getElementById('coverPreviewLabel');
+
+    if (params.data.cover_url) {
+        img.src = params.data.cover_url;
+        label.textContent = `${params.data.value[0]} · ${params.data.hex}`;
+
+        // Positionner près du clic
+        const chartDom = document.getElementById('colorChart');
+        const rect = chartDom.getBoundingClientRect();
+        preview.style.left = (params.event.offsetX + 15) + 'px';
+        preview.style.top = (params.event.offsetY - 60) + 'px';
+        preview.style.display = 'block';
+    }
 });
 
-$('colorChart').addEventListener('click', e => {
-  if (e.target === $('colorChart')) $('coverPreview').style.display = 'none';
+// Fermer au clic en dehors
+document.getElementById('colorChart').addEventListener('click', function(e) {
+    if (e.target === this) document.getElementById('coverPreview').style.display = 'none';
 });
 
 fetch('/api/color-analysis/')
-  .then(r => r.json())
-  .then(data => { colorData = data; renderColorChart('hue'); });
-
-$('colorMetric').addEventListener('change', function() { renderColorChart(this.value); });
-window.addEventListener('resize', () => colorChart.resize());
-
-
-/* ── HEATMAP ── */
-const imaginaryChart = echarts.init($('imaginaryChart'), null, { renderer: 'canvas' });
-window.addEventListener('resize', () => imaginaryChart.resize());
-
-function loadHeatmap(mode = 'words') {
-  fetch(`/api/heatmap/?mode=${mode}`)
     .then(r => r.json())
-    .then(data => {
-      const { rows, cols } = data;
-      const flat = [];
-      data.data.forEach((rowData, ri) => {
-        rowData.forEach((val, ci) => flat.push([ci, ri, val]));
-      });
-      const maxVal = Math.max(...flat.map(d => d[2]), 1);
+    .then(data => { colorData = data; renderColorChart('hue'); });
 
-      imaginaryChart.setOption({
-        backgroundColor: 'transparent',
-        tooltip: {
-          backgroundColor: '#181818',
-          borderColor: 'rgba(255,255,255,0.07)',
-          textStyle: { color: '#f0ede8', fontFamily: 'DM Mono, monospace', fontSize: 12 },
-          formatter: p => `<b>${rows[p.data[1]]}</b><br/>${cols[p.data[0]]}: <b>${p.data[2]}</b>`
-        },
-        grid: { left: 150, right: 20, bottom: 70, top: 20 },
-        xAxis: {
-          type: 'category', data: cols,
-          splitArea: { show: true, areaStyle: { color: ['rgba(255,255,255,0.02)', 'transparent'] } },
-          axisLabel: { interval: 2, rotate: 45, fontSize: 10, color: 'rgba(240,237,232,.4)', fontFamily: 'DM Mono' },
-          axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-        },
-        yAxis: {
-          type: 'category', data: rows,
-          splitArea: { show: true, areaStyle: { color: ['rgba(255,255,255,0.02)', 'transparent'] } },
-          axisLabel: { fontSize: 11, color: 'rgba(240,237,232,.6)', fontFamily: 'DM Mono' },
-          axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-        },
-        visualMap: {
-          min: 0, max: maxVal,
-          calculable: true,
-          orient: 'horizontal',
-          left: 'center', bottom: 4,
-          inRange: { color: ['#0d1f2d', '#4fc3f7'] },
-          textStyle: { color: 'rgba(240,237,232,.4)', fontFamily: 'DM Mono', fontSize: 10 },
-          handleStyle: { color: '#4fc3f7' },
-        },
-        series: [{
-          type: 'heatmap', data: flat,
-          emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(79,195,247,0.4)' } }
-        }],
-      });
-    });
-}
-
-['modeWords', 'modeCategories', 'modeAuthors'].forEach(id => {
-  $(id).addEventListener('click', function() {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-    loadHeatmap(id.replace('mode', '').toLowerCase());
-  });
+document.getElementById('colorMetric').addEventListener('change', function () {
+    renderColorChart(this.value);
 });
 
-loadHeatmap('words');
-</script>
+window.addEventListener('resize', () => colorChart.resize());
 
+    // Heatmap
+    const imaginaryChart = echarts.init(document.getElementById('imaginaryChart'));
+    window.addEventListener('resize', () => imaginaryChart.resize());
+
+   function loadHeatmap(mode = 'words') {
+    fetch(`/api/heatmap/?mode=${mode}`)
+        .then(r => r.json())
+        .then(data => {
+            const rows = data.rows;
+            const cols = data.cols;
+            const flat = [];
+            data.data.forEach((rowData, ri) => {
+                rowData.forEach((val, ci) => flat.push([ci, ri, val]));
+            });
+            const maxVal = Math.max(...flat.map(d => d[2]), 1);
+
+            imaginaryChart.setOption({
+                tooltip: {
+                    formatter: p => `<b>${rows[p.data[1]]}</b><br/>${cols[p.data[0]]}: <b>${p.data[2]}</b>`
+                },
+                grid: { left: 160, right: 20, bottom: 60, top: 20 },
+                xAxis: {
+                    type: 'category',
+                    data: cols,
+                    splitArea: { show: true },
+                    axisLabel: { interval: 2, rotate: 45, fontSize: 10 }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: rows,
+                    splitArea: { show: true },
+                    axisLabel: { fontSize: 11 }
+                },
+                visualMap: {
+                    min: 0, max: maxVal,
+                    calculable: true,
+                    orient: 'horizontal',
+                    left: 'center',
+                    bottom: 0,
+                    inRange: { color: ['#e8f4fc', '#0369a1'] },
+                },
+                series: [{
+                    type: 'heatmap',
+                    data: flat,
+                    emphasis: {
+                        itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' }
+                    }
+                }],
+            });
+        });
+}
+
+    ['modeWords', 'modeCategories', 'modeAuthors'].forEach(id => {
+        document.getElementById(id).addEventListener('click', function() {
+            document.querySelectorAll('#modeWords, #modeCategories, #modeAuthors').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            loadHeatmap(id.replace('mode', '').toLowerCase());
+        });
+    });
+
+    loadHeatmap('words');
+</script>
 {% endblock %}
