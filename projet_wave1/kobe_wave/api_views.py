@@ -481,27 +481,30 @@ def api_heatmap(request):
 
 
 # ── /api/color-analysis/ ────────────────────────────────────────
+
 @api_view(["GET"])
 def api_color_analysis(request):
     import colorsys
+    import traceback
 
     cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    print("CLOUDINARY_CLOUD_NAME =", cloud_name)
 
-    images = (
-        Image.objects.exclude(hexadecimal__isnull=True)
-        .exclude(hexadecimal__exact="")
-        .values("hexadecimal", "year", "filename")[:5000]
-    )
-    result = []
-    for img in images:
-        hex_color = img["hexadecimal"].strip().lstrip("#")
-        if len(hex_color) != 6:
-            continue
-        try:
-            r, g, b = (int(hex_color[i: i + 2], 16) / 255 for i in (0, 2, 4))
-            h, s, v = colorsys.rgb_to_hsv(r, g, b)
-            result.append(
-                {
+    try:
+        images = (
+            Image.objects.exclude(hexadecimal__isnull=True)
+            .exclude(hexadecimal__exact="")
+            .values("hexadecimal", "year", "filename")[:5000]
+        )
+        result = []
+        for img in images:
+            hex_color = img["hexadecimal"].strip().lstrip("#")
+            if len(hex_color) != 6:
+                continue
+            try:
+                r, g, b = (int(hex_color[i: i + 2], 16) / 255 for i in (0, 2, 4))
+                h, s, v = colorsys.rgb_to_hsv(r, g, b)
+                result.append({
                     "hex": "#" + hex_color,
                     "year": img["year"],
                     "hue": round(h * 360, 1),
@@ -511,11 +514,17 @@ def api_color_analysis(request):
                         f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{img['filename']}.jpg"
                         if img["filename"] else None
                     ),
-                }
-            )
-        except Exception:
-            continue
-    return Response(result)
+                })
+            except Exception as e:
+                print("Erreur sur img:", img, "->", e)
+                continue
+
+        print("Résultat OK, nb items:", len(result))
+        return Response(result)
+
+    except Exception:
+        traceback.print_exc()
+        return Response({"error": "server error"}, status=500)
 # ── /api/cover-words/ ───────────────────────────────────────────
 @api_view(["GET"])
 def api_cover_words(request):
