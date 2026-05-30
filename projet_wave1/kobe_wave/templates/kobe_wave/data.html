@@ -12,18 +12,20 @@
     <div class="row g-4 mb-5">
         <div class="col-md-4">
             <p style="color:white; text-align:justify;">
-                This network graph links the most frequent sitemap keywords whenever they co-occur in the same headline or teaser.
-                 Hover on a node to preview its total occurrences; click to isolate its immediate neighbors and highlight the stories that mention both terms in the panel below the chart. 
-                 Edges respond to the cursor as well: hovering reveals the exact article titles that connect the two concepts, while clicking pins those titles for later reading.
-                  Use the search bar to inject any additional word from the corpus—the new node appears in yellow, ready to be explored like the orange “top words.” 
-                  If the screen becomes cluttered, press RESET to rebuild the layout and remove any custom additions. 
-                  Together, these interactions offer a quick way to spot unexpected relationships, recurring themes, and the clusters of ideas that dominate different periods of Wired’s sitemap.
+                This network graph links the most frequent sitemap
+                 keywords whenever they co-occur in the same article title. 
+                 Hover on a node to preview its total occurrences; 
+                 click to isolate its immediate neighbors and highlight 
+                 the stories that mention that term in the panel below the chart. 
+                 Edges respond to the cursor as well: hovering reveals the exact article titles that connect the two concepts,
+                 while clicking pins those titles for later reading. Use the search bar to explore any word from the corpus — the graph rebuilds around that word and its closest connections.
+                 Press RESET to return to the default top-30 view.
             </p>
         </div>
         <div class="col-md-8">
             <div class="card shadow-sm border-0 p-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <h6 class="mb-0" style="color:#111;">🕸️ Co-occurrence Network</h6>
+                     <h6 class="mb-0" style="color:#111;">🕸️ Co-occurrence Network</h6>
                     <div class="d-flex gap-2">
                         <input type="text" id="searchWord" class="form-control form-control-sm" placeholder="Search a word..." style="width:180px;">
                         <button id="btnSearch" class="btn btn-sm btn-outline-warning">Search</button>

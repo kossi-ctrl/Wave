@@ -9,6 +9,7 @@ import cloudinary
 import cloudinary.utils
 import re
 import os
+from kobe_wave import precompute as pc
 
 STOP_WORDS = frozenset(
     {
@@ -61,40 +62,29 @@ STOP_WORDS = frozenset(
 
 WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 
-
 # ── /api/cooccurrence/ ──────────────────────────────────────────
 @api_view(["GET"])
 def api_cooccurrence(request):
     word = request.GET.get("word", "").lower().strip()
 
-    cached = cache.get("cooccurrence_graph")
-    if cached and not word:
-        if word:
-            pass
-        return Response(cached)
+    if not pc.is_ready:
+        return Response({"error": "Précalcul en cours, réessayez dans quelques secondes."}, status=503)
+
+    if not word:
+        cached = cache.get("cooccurrence_graph")
+        if cached:
+            return Response(cached)
 
     top_n = int(request.GET.get("top", 30))
-    word_freq = Counter()
-    cooccur = defaultdict(int)
 
-    for title in Article.objects.values_list("title", flat=True).iterator(chunk_size=2000):
-        if not title:
-            continue
-        words = list(set(w for w in WORD_PATTERN.findall(title.lower()) if w not in STOP_WORDS))
-        for w in words:
-            word_freq[w] += 1
-        for i in range(len(words)):
-            for j in range(i + 1, len(words)):
-                cooccur[tuple(sorted([words[i], words[j]]))] += 1
-
-    top_words = [w for w, _ in word_freq.most_common(top_n)]
-    top_set = set(top_words)
-
-    # Cas recherche d'un mot spécifique
-    # Cas recherche d'un mot spécifique
     if word:
+        cache_key = f"cooccurrence_word_{word}"
+        cached_word = cache.get(cache_key)
+        if cached_word:
+            return Response(cached_word)
+
         related = {}
-        for (w1, w2), count in cooccur.items():
+        for (w1, w2), count in pc.cooccur.items():
             if word == w1:
                 related[w2] = count
             elif word == w2:
@@ -104,24 +94,28 @@ def api_cooccurrence(request):
             return Response({"nodes": [], "links": [], "value": 0})
 
         top_related = sorted(related.items(), key=lambda x: x[1], reverse=True)[:15]
-
-        nodes = [{"id": word, "value": word_freq.get(word, 1)}]
+        nodes = [{"id": word, "value": pc.word_freq.get(word, 1)}]
         links = []
         for w, count in top_related:
-            nodes.append({"id": w, "value": word_freq.get(w, 1)})
+            nodes.append({"id": w, "value": pc.word_freq.get(w, 1)})
             links.append({"source": word, "target": w, "value": count})
 
-        return Response({"nodes": nodes, "links": links, "value": word_freq.get(word, 1)})
+        result = {"nodes": nodes, "links": links, "value": pc.word_freq.get(word, 1)}
+        cache.set(cache_key, result, 60 * 60)
+        return Response(result)
+
     # Cas général
-    nodes = [{"id": w, "value": word_freq[w]} for w in top_words]
+    top_words = [w for w, _ in pc.word_freq.most_common(top_n)]
+    top_set = set(top_words)
+    nodes = [{"id": w, "value": pc.word_freq[w]} for w in top_words]
     links = [
         {"source": w1, "target": w2, "value": count}
-        for (w1, w2), count in cooccur.items()
+        for (w1, w2), count in pc.cooccur.items()
         if w1 in top_set and w2 in top_set
     ]
-
     result = {"nodes": nodes, "links": links}
     cache.set("cooccurrence_graph", result, 60 * 60)
+    return Response(result)
     return Response(result)
 
 # ── /api/radial/ ────────────────────────────────────────────────
