@@ -73,89 +73,105 @@ const PALETTE = [
 ];
 
 // ── Co-occurrence Network ────────────────────────────────────────
+const chart = echarts.init(document.getElementById('networkChart'));
+window.addEventListener('resize', () => chart.resize());
+
+const NET_PALETTE = ['#6366f1','#3b82f6','#10b981','#f59e0b','#f97316','#ec4899'];
+let maxVal = 1;
+let originalNodes = [];
+let originalLinks = [];
+
+function nodeColor(value) {
+    const tier = Math.floor((value / maxVal) * (NET_PALETTE.length - 1));
+    return NET_PALETTE[Math.min(tier, NET_PALETTE.length - 1)];
+}
+
+function buildNodes(nodes) {
+    return nodes.map(n => ({
+        name: n.id || n.name,
+        value: n.value,
+        symbolSize: Math.min(10 + (n.value / maxVal) * 50, 60),
+        label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
+        itemStyle: { color: nodeColor(n.value), borderColor: '#fff', borderWidth: 1.5 }
+    }));
+}
+
+function buildLinks(links) {
+    return links.map(l => ({
+        source: l.source,
+        target: l.target,
+        value: l.value,
+        lineStyle: { width: 1 + Math.log(l.value || 1), color: '#aaaaaa', opacity: 0.4, curveness: 0.3 }
+    }));
+}
+
+function renderGraph(nodes, links) {
+    chart.setOption({
+        backgroundColor: '#ffffff',
+        tooltip: {
+            trigger: 'item',
+            formatter: params => {
+                if (params.dataType === 'edge')
+                    return `<b>${params.data.source} ↔ ${params.data.target}</b><br/>${params.data.value} co-occurrences`;
+                return `<b>${params.name}</b><br/>Fréquence : ${params.data.value}`;
+            }
+        },
+        series: [{
+            type: 'graph',
+            layout: 'circular',
+            circular: { rotateLabel: true },
+            roam: true,
+            draggable: false,
+            data: nodes,
+            links: links,
+            emphasis: {
+                focus: 'adjacency',
+                lineStyle: { width: 4, color: '#f97316', opacity: 1 },
+                itemStyle: { borderWidth: 3 }
+            }
+        }]
+    }, true);
+}
+
+function highlightNode(word, nodes, links) {
+    const neighbors = new Set([word]);
+    links.forEach(l => {
+        if (l.source === word) neighbors.add(l.target);
+        if (l.target === word) neighbors.add(l.source);
+    });
+    chart.setOption({
+        series: [{
+            data: nodes.map(n => ({
+                ...n,
+                itemStyle: {
+                    color: n.name === word ? '#facc15' : neighbors.has(n.name) ? nodeColor(n.value) : '#cccccc',
+                    opacity: neighbors.has(n.name) ? 1 : 0.15,
+                    borderColor: '#fff', borderWidth: 1.5
+                }
+            })),
+            links: links.map(l => ({
+                ...l,
+                lineStyle: {
+                    color: (l.source === word || l.target === word) ? '#f97316' : '#aaaaaa',
+                    opacity: (l.source === word || l.target === word) ? 1 : 0.1,
+                    width: (l.source === word || l.target === word) ? 3 : 1,
+                    curveness: 0.3
+                }
+            }))
+        }]
+    });
+}
+
 fetch('/api/cooccurrence/')
     .then(r => r.json())
     .then(data => {
-        const chart  = echarts.init(document.getElementById('networkChart'));
-        const maxVal = Math.max(...data.nodes.map(n => n.value), 1);
-        const NET_PALETTE = ['#6366f1','#3b82f6','#10b981','#f59e0b','#f97316','#ec4899'];
+        maxVal = Math.max(...data.nodes.map(n => n.value), 1);
+        originalNodes = buildNodes(data.nodes);
+        originalLinks = buildLinks(data.links);
+        renderGraph(originalNodes, originalLinks);
+    });
 
-        function nodeColor(value) {
-            const tier = Math.floor((value / maxVal) * (NET_PALETTE.length - 1));
-            return NET_PALETTE[Math.min(tier, NET_PALETTE.length - 1)];
-        }
-
-        chart.setOption({
-            backgroundColor: '#ffffff',
-            tooltip: {
-                trigger: 'item',
-                formatter: params => {
-                    if (params.dataType === 'edge')
-                        return `<b>${params.data.source} ↔ ${params.data.target}</b><br/>${params.data.value} co-occurrences`;
-                    return `<b>${params.name}</b><br/>Fréquence : ${params.data.value}`;
-                }
-            },
-            series: [{
-                type: 'graph',
-                layout: 'circular',
-                circular: { rotateLabel: true },
-                roam: true,
-                draggable: false,
-                data: data.nodes.map(n => ({
-                    name: n.id,
-                    value: n.value,
-                    symbolSize: Math.min(10 + (n.value / maxVal) * 50, 60),
-                    label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
-                    itemStyle: { color: nodeColor(n.value), borderColor: '#fff', borderWidth: 1.5 }
-                })),
-                links: data.links.map(l => ({
-                    source: l.source,
-                    target: l.target,
-                    value:  l.value,
-                    lineStyle: { width: 1 + Math.log(l.value || 1), color: '#aaaaaa', opacity: 0.4, curveness: 0.3 }
-                })),
-                emphasis: {
-                    focus: 'adjacency',
-                    lineStyle: { width: 4, color: '#f97316', opacity: 1 },
-                    itemStyle: { borderWidth: 3 }
-                }
-            }]
-        });
-
-        window.addEventListener('resize', () => chart.resize());
-
-        // ── Highlight helper ─────────────────────────────────────
-        function highlightNode(word, nodes, links) {
-            const neighbors = new Set([word]);
-            links.forEach(l => {
-                if (l.source === word) neighbors.add(l.target);
-                if (l.target === word) neighbors.add(l.source);
-            });
-            chart.setOption({
-                series: [{
-                    data: nodes.map(n => ({
-                        ...n,
-                        itemStyle: {
-                            color:   n.name === word ? '#facc15' : neighbors.has(n.name) ? nodeColor(n.value) : '#cccccc',
-                            opacity: neighbors.has(n.name) ? 1 : 0.15,
-                            borderColor: '#fff', borderWidth: 1.5
-                        }
-                    })),
-                    links: links.map(l => ({
-                        ...l,
-                        lineStyle: {
-                            color:   (l.source === word || l.target === word) ? '#f97316' : '#aaaaaa',
-                            opacity: (l.source === word || l.target === word) ? 1 : 0.1,
-                            width:   (l.source === word || l.target === word) ? 3 : 1,
-                            curveness: 0.3
-                        }
-                    }))
-                }]
-            });
-        }
-
-        // ── Hover lien → articles ────────────────────────────────
-        // Hover lien → aperçu articles (non figé)
+// ── Hover lien → articles ────────────────────────────────
 chart.on('mouseover', { dataType: 'edge' }, params => {
     const w1 = params.data.source, w2 = params.data.target;
     document.getElementById('networkWord').textContent = `${w1} ↔ ${w2}`;
@@ -177,13 +193,12 @@ chart.on('mouseover', { dataType: 'edge' }, params => {
         });
 });
 
-// ← AJOUT : Clic lien → fige le highlight sur les deux nœuds
+// ── Clic lien → highlight persistant ────────────────────
 chart.on('click', { dataType: 'edge' }, params => {
     const w1 = params.data.source, w2 = params.data.target;
     const option = chart.getOption();
-    const nodes  = option.series[0].data;
-    const links  = option.series[0].links;
-
+    const nodes = option.series[0].data;
+    const links = option.series[0].links;
     const involved = new Set([w1, w2]);
 
     chart.setOption({
@@ -191,7 +206,7 @@ chart.on('click', { dataType: 'edge' }, params => {
             data: nodes.map(n => ({
                 ...n,
                 itemStyle: {
-                    color:   involved.has(n.name) ? '#f97316' : '#cccccc',
+                    color: involved.has(n.name) ? '#f97316' : '#cccccc',
                     opacity: involved.has(n.name) ? 1 : 0.15,
                     borderColor: '#fff', borderWidth: 1.5
                 }
@@ -199,25 +214,40 @@ chart.on('click', { dataType: 'edge' }, params => {
             links: links.map(l => ({
                 ...l,
                 lineStyle: {
-                    color:   (l.source === w1 && l.target === w2) || (l.source === w2 && l.target === w1)
-                             ? '#f97316' : '#aaaaaa',
+                    color: (l.source === w1 && l.target === w2) || (l.source === w2 && l.target === w1)
+                        ? '#f97316' : '#aaaaaa',
                     opacity: (l.source === w1 && l.target === w2) || (l.source === w2 && l.target === w1)
-                             ? 1 : 0.08,
-                    width:   (l.source === w1 && l.target === w2) || (l.source === w2 && l.target === w1)
-                             ? 4 : 1,
+                        ? 1 : 0.08,
+                    width: (l.source === w1 && l.target === w2) || (l.source === w2 && l.target === w1)
+                        ? 4 : 1,
                     curveness: 0.3
                 }
             }))
         }]
     });
+
+    document.getElementById('networkWord').textContent = `${w1} ↔ ${w2}`;
+    document.getElementById('networkPanel').style.display = 'block';
+    document.getElementById('networkArticles').innerHTML = '<p class="text-muted small">Chargement...</p>';
+    fetch(`/api/articles-cooccurrence/?w1=${w1}&w2=${w2}`)
+        .then(r => r.json())
+        .then(articles => {
+            document.getElementById('networkArticles').innerHTML =
+                `<p class="fw-semibold text-center" style="color:#f97316;">${w1} ↔ ${w2}</p>
+                 <p class="text-muted small text-center">${articles.length} titles found</p>` +
+                (articles.length
+                    ? articles.slice(0,15).map(a => `
+                        <a href="/articles/${a.id_articles}/" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div><div class="fw-semibold">${a.title}</div><small class="text-muted">${a.author || 'Unknown'}</small></div>
+                            <span class="badge rounded-pill" style="background:#f97316;color:white;">${a.id_articles}</span>
+                        </a>`).join('')
+                    : '<p class="text-muted small text-center">Aucun article trouvé.</p>');
+        });
 });
 
-        // ── Clic nœud → articles ─────────────────────────────────
-        // Clic sur un nœud → articles + highlight persistant
-    chart.on('click', { dataType: 'node' }, params => {
+// ── Clic nœud → highlight persistant ────────────────────
+chart.on('click', { dataType: 'node' }, params => {
     const word = params.name;
-
-    // ← AJOUT : fige le highlight
     const option = chart.getOption();
     highlightNode(word, option.series[0].data, option.series[0].links);
 
@@ -241,8 +271,8 @@ chart.on('click', { dataType: 'edge' }, params => {
         });
 });
 
-        // ── Recherche / injection ────────────────────────────────
-       document.getElementById('btnSearch').addEventListener('click', () => {
+// ── Recherche ────────────────────────────────────────────
+document.getElementById('btnSearch').addEventListener('click', () => {
     const word = document.getElementById('searchWord').value.trim().toLowerCase();
     if (!word) return;
 
@@ -263,58 +293,22 @@ chart.on('click', { dataType: 'edge' }, params => {
                 return;
             }
 
-            const newNodes = apiData.nodes.map(n => ({
-                name: n.id,
-                value: n.value,
-                symbolSize: Math.min(10 + (n.value / maxVal) * 50, 60),
-                _custom: n.id === word,
-                label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
-                itemStyle: {
-                    color: n.id === word ? '#facc15' : nodeColor(n.value),
-                    borderColor: '#fff', borderWidth: 1.5
-                }
-            }));
+            const newNodes = buildNodes(apiData.nodes);
+            const newLinks = buildLinks(apiData.links);
 
-            const newLinks = apiData.links.map(l => ({
-                source: l.source,
-                target: l.target,
-                value: l.value,
-                lineStyle: {
-                    width: 1 + Math.log(l.value || 1),
-                    color: '#aaaaaa',
-                    opacity: 0.4,
-                    curveness: 0.3
-                }
-            }));
-
-            chart.setOption({ series: [{ data: newNodes, links: newLinks }] }, true);
+            renderGraph(newNodes, newLinks);
             highlightNode(word, newNodes, newLinks);
         })
         .catch(() => alert(`Impossible de charger "${word}".`));
 });
-        // ── Reset ────────────────────────────────────────────────
-        document.getElementById('btnReset').addEventListener('click', () => {
-            document.getElementById('searchWord').value = '';
-            document.getElementById('networkPanel').style.display = 'none';
-            document.getElementById('networkArticles').innerHTML = '';
-            const option = chart.getOption();
-            const nodes  = option.series[0].data.filter(n => !n._custom);
-            const links  = option.series[0].links.filter(l => !l._custom);
-            chart.setOption({
-                series: [{
-                    data: nodes.map(n => ({
-                        ...n,
-                        itemStyle: { color: nodeColor(n.value), opacity: 1, borderColor: '#fff', borderWidth: 1.5 }
-                    })),
-                    links: links.map(l => ({
-                        ...l,
-                        lineStyle: { color: '#aaaaaa', opacity: 0.4, width: 1 + Math.log(l.value || 1), curveness: 0.3 }
-                    }))
-                }]
-            });
-        });
 
-    }); // ← fermeture du fetch co-occurrence 
+// ── Reset ────────────────────────────────────────────────
+document.getElementById('btnReset').addEventListener('click', () => {
+    document.getElementById('searchWord').value = '';
+    document.getElementById('networkPanel').style.display = 'none';
+    document.getElementById('networkArticles').innerHTML = '';
+    renderGraph(originalNodes, originalLinks);
+});
 
 // ── Radial Chart ─────────────────────────────────────────────────
 const radialChart = echarts.init(document.getElementById('radialChart'));
