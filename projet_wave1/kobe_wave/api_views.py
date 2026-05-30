@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from kobe_wave.serializers import ArticleSerializer, ImageSerializer
 from rest_framework.response import Response
 from django.db.models import Count
+from django.core.cache import cache
 from kobe_wave.models import Article, Image, Category
 from collections import Counter, defaultdict
 import cloudinary
@@ -12,268 +13,63 @@ import os
 STOP_WORDS = frozenset(
     {
         # Articles / determiners FR
-        "le",
-        "la",
-        "les",
-        "un",
-        "une",
-        "des",
-        "du",
-        "au",
-        "aux",
-        "ce",
-        "cet",
-        "cette",
-        "ces",
-        "mon",
-        "ton",
-        "son",
-        "mes",
-        "tes",
-        "ses",
-        "notre",
-        "votre",
-        "leur",
-        "leurs",
-        "nos",
-        "vos",
+        "le", "la", "les", "un", "une", "des", "du", "au", "aux",
+        "ce", "cet", "cette", "ces", "mon", "ton", "son", "mes",
+        "tes", "ses", "notre", "votre", "leur", "leurs", "nos", "vos",
         # Prepositions / conjunctions FR
-        "de",
-        "en",
-        "dans",
-        "sur",
-        "sous",
-        "avec",
-        "sans",
-        "pour",
-        "par",
-        "vers",
-        "entre",
-        "donc",
-        "mais",
-        "ainsi",
-        "comme",
-        "puis",
-        "car",
-        "que",
-        "qui",
-        "dont",
-        "quoi",
-        "quand",
-        "depuis",
-        "selon",
-        "lors",
-        "tout",
-        "plus",
-        "tres",
-        "trop",
-        "bien",
-        "meme",
-        "aussi",
-        "deja",
-        "encore",
-        "toujours",
-        "jamais",
-        "chez",
-        "pres",
-        "apres",
-        "avant",
-        "pendant",
-        "contre",
+        "de", "en", "dans", "sur", "sous", "avec", "sans", "pour",
+        "par", "vers", "entre", "donc", "mais", "ainsi", "comme",
+        "puis", "car", "que", "qui", "dont", "quoi", "quand", "depuis",
+        "selon", "lors", "tout", "plus", "tres", "trop", "bien", "meme",
+        "aussi", "deja", "encore", "toujours", "jamais", "chez", "pres",
+        "apres", "avant", "pendant", "contre",
         # Common verbs FR
-        "est",
-        "sont",
-        "etre",
-        "avoir",
-        "fait",
-        "font",
-        "peut",
-        "peuvent",
-        "doit",
-        "doivent",
-        "faut",
-        "vient",
-        "devient",
-        "reste",
-        "sera",
-        "seront",
-        "etait",
-        "avait",
+        "est", "sont", "etre", "avoir", "fait", "font", "peut", "peuvent",
+        "doit", "doivent", "faut", "vient", "devient", "reste", "sera",
+        "seront", "etait", "avait",
         # Pronouns FR
-        "il",
-        "elle",
-        "ils",
-        "elles",
-        "nous",
-        "vous",
-        "eux",
-        "cela",
-        "ceci",
-        "celui",
-        "celle",
-        "ceux",
+        "il", "elle", "ils", "elles", "nous", "vous", "eux", "cela",
+        "ceci", "celui", "celle", "ceux",
         # Articles EN
-        "the",
-        "a",
-        "an",
+        "the", "a", "an",
         # Prepositions / conjunctions EN
-        "in",
-        "on",
-        "at",
-        "to",
-        "for",
-        "of",
-        "and",
-        "or",
-        "but",
-        "with",
-        "from",
-        "by",
-        "as",
-        "into",
-        "over",
-        "after",
-        "about",
-        "than",
-        "via",
-        "within",
-        "between",
-        "through",
-        "against",
-        "during",
-        "before",
-        "up",
-        "out",
-        "off",
+        "in", "on", "at", "to", "for", "of", "and", "or", "but", "with",
+        "from", "by", "as", "into", "over", "after", "about", "than",
+        "via", "within", "between", "through", "against", "during",
+        "before", "up", "out", "off",
         # Auxiliary verbs EN
-        "is",
-        "are",
-        "was",
-        "were",
-        "be",
-        "been",
-        "has",
-        "have",
-        "had",
-        "will",
-        "would",
-        "could",
-        "should",
-        "may",
-        "might",
-        "does",
-        "did",
-        "do",
-        "can",
+        "is", "are", "was", "were", "be", "been", "has", "have", "had",
+        "will", "would", "could", "should", "may", "might", "does", "did", "do", "can",
         # Pronouns EN
-        "it",
-        "its",
-        "this",
-        "that",
-        "they",
-        "their",
-        "there",
-        "which",
-        "who",
-        "what",
-        "how",
-        "when",
-        "where",
-        "why",
-        "he",
-        "she",
-        "his",
-        "her",
-        "we",
-        "our",
-        "you",
-        "your",
-        "us",
-        "my",
+        "it", "its", "this", "that", "they", "their", "there", "which",
+        "who", "what", "how", "when", "where", "why", "he", "she", "his",
+        "her", "we", "our", "you", "your", "us", "my",
         # Adverbs / filler words EN
-        "not",
-        "no",
-        "so",
-        "if",
-        "just",
-        "now",
-        "also",
-        "even",
-        "still",
-        "back",
-        "most",
-        "more",
-        "all",
-        "then",
-        "here",
-        "only",
-        "very",
-        "too",
-        "yet",
-        "both",
-        "each",
-        "other",
-        "such",
-        "same",
-        "new",
+        "not", "no", "so", "if", "just", "now", "also", "even", "still",
+        "back", "most", "more", "all", "then", "here", "only", "very",
+        "too", "yet", "both", "each", "other", "such", "same", "new",
         # Generic verbs EN
-        "get",
-        "make",
-        "made",
-        "use",
-        "used",
-        "using",
-        "say",
-        "says",
-        "said",
-        "want",
-        "need",
-        "look",
-        "know",
-        "take",
-        "come",
-        "give",
-        "find",
-        "think",
-        "see",
-        "like",
-        "show",
+        "get", "make", "made", "use", "used", "using", "say", "says",
+        "said", "want", "need", "look", "know", "take", "come", "give",
+        "find", "think", "see", "like", "show",
         # Time-related
-        "time",
-        "year",
-        "years",
-        "day",
-        "days",
-        "week",
-        "month",
-        "today",
-        "last",
-        "first",
-        "one",
-        "two",
-        "three",
-        "ans",
-        "jour",
-        "mois",
-        "semaine",
-        "fois",
+        "time", "year", "years", "day", "days", "week", "month", "today",
+        "last", "first", "one", "two", "three", "ans", "jour", "mois",
+        "semaine", "fois",
     }
 )
 
 WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 
 
-from django.core.cache import cache  # ajoute cet import en haut
-
+# ── /api/cooccurrence/ ──────────────────────────────────────────
 @api_view(["GET"])
 def api_cooccurrence(request):
     word = request.GET.get("word", "").lower().strip()
 
     if word:
-        # ... ton code existant pour CAS 1 (déjà rapide, pas touché)
-        pass
+        pass  # ton code existant pour CAS 1
 
-    # ── CAS 2 : résultat mis en cache 1 heure ──
     cached = cache.get("cooccurrence_graph")
     if cached:
         return Response(cached)
@@ -295,15 +91,21 @@ def api_cooccurrence(request):
     top_words = [w for w, _ in word_freq.most_common(top_n)]
     top_set = set(top_words)
 
-    nodes = [...]  # ton code existant
-    links = [...]  # ton code existant
+    nodes = []  # ton code existant
+    links = []  # ton code existant
 
     result = {"nodes": nodes, "links": links}
     cache.set("cooccurrence_graph", result, 60 * 60)  # cache 1h
     return Response(result)
+
+
 # ── /api/radial/ ────────────────────────────────────────────────
 @api_view(["GET"])
 def api_radial(request):
+    cached = cache.get("api_radial")
+    if cached:
+        return Response(cached)
+
     word_cat = defaultdict(lambda: defaultdict(int))
     word_total = Counter()
 
@@ -322,17 +124,22 @@ def api_radial(request):
         .order_by("-total")
         .values_list("name", flat=True)
     )
-    result = [
-        {
-            "word": w,
-            "total": word_total[w],
-            "by_category": [
-                {"category": cat, "count": word_cat[w].get(cat, 0)} for cat in all_cats
-            ],
-        }
-        for w in top_words
-    ]
-    return Response({"words": result, "categories": all_cats})
+    result = {
+        "words": [
+            {
+                "word": w,
+                "total": word_total[w],
+                "by_category": [
+                    {"category": cat, "count": word_cat[w].get(cat, 0)} for cat in all_cats
+                ],
+            }
+            for w in top_words
+        ],
+        "categories": all_cats,
+    }
+
+    cache.set("api_radial", result, 60 * 30)  # cache 30 min
+    return Response(result)
 
 
 # ── /api/articles_cooccurrence/ ─────────────────────────────────
@@ -384,31 +191,37 @@ def api_images(request):
 # ── /api/stats/ ─────────────────────────────────────────────────
 @api_view(["GET"])
 def api_stats(request):
-    return Response(
-        {
-            "articles": Article.objects.count(),
-            "images": Image.objects.count(),
-            "categories": Category.objects.count(),
-        }
-    )
+    cached = cache.get("api_stats")
+    if cached:
+        return Response(cached)
+
+    result = {
+        "articles": Article.objects.count(),
+        "images": Image.objects.count(),
+        "categories": Category.objects.count(),
+    }
+
+    cache.set("api_stats", result, 60 * 10)  # cache 10 min
+    return Response(result)
 
 
-# ── /api/wordcloud/ ─────────────────────────────────────────────
+# ── /api/covers/ ─────────────────────────────────────────────────
 @api_view(["GET"])
 def api_covers(request):
-    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    cached = cache.get("api_covers")
+    if cached:
+        return Response(cached)
+
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
     cat_map = defaultdict(set)
-    for row in Article.objects.filter(
-        category__isnull=False
-    ).values("image_id", "category_id"):
+    for row in Article.objects.filter(category__isnull=False).values("image_id", "category_id"):
         cat_map[row["image_id"]].add(row["category_id"])
 
     images = Image.objects.only(
-        "id_image", "filename", "year", "month",
-        "hexadecimal", "hue", "sat", "bri"
+        "id_image", "filename", "year", "month", "hexadecimal", "hue", "sat", "bri"
     ).order_by("year", "month")
 
-    return Response([
+    result = [
         {
             "id": img.id_image,
             "url": f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{img.filename}.jpg",
@@ -421,21 +234,41 @@ def api_covers(request):
             "categories": list(cat_map.get(img.id_image, [])),
         }
         for img in images
-    ])
+    ]
+
+    cache.set("api_covers", result, 60 * 30)  # cache 30 min
+    return Response(result)
+
+
 # ── /api/colors/ ────────────────────────────────────────────────
 @api_view(["GET"])
 def api_colors(request):
+    category = request.GET.get("category", "")
+    cache_key = f"api_colors_{category}"
+
+    cached = cache.get(cache_key)
+    if cached:
+        return Response(cached)
+
     qs = Image.objects.all()
-    if request.GET.get("category"):
-        qs = qs.filter(article__category__name__icontains=request.GET["category"])
-    colors = qs.values("hexadecimal").annotate(total=Count("id_image")).order_by("-total")[:20]
-    return Response(list(colors))
+    if category:
+        qs = qs.filter(article__category__name__icontains=category)
+    colors = list(qs.values("hexadecimal").annotate(total=Count("id_image")).order_by("-total")[:20])
+
+    cache.set(cache_key, colors, 60 * 30)  # cache 30 min
+    return Response(colors)
 
 
 # ── /api/heatmap/ ────────────────────────────────────────────────
 @api_view(["GET"])
 def api_heatmap(request):
     mode = request.GET.get("mode", "words")
+    cache_key = f"api_heatmap_{mode}"
+
+    cached = cache.get(cache_key)
+    if cached:
+        return Response(cached)
+
     years = list(range(1993, 2026))
     years_labels = [str(y) for y in years]
 
@@ -483,21 +316,27 @@ def api_heatmap(request):
                     word_total[word] += 1
         rows = [w for w, _ in word_total.most_common(50)]
         data = [[word_year[row][y] for y in years] for row in rows]
-        return Response({"rows": rows, "cols": years_labels, "data": data, "mode": mode})
+        result = {"rows": rows, "cols": years_labels, "data": data, "mode": mode}
+        cache.set(cache_key, result, 60 * 30)
+        return Response(result)
 
     data = [[map_[row][y] for y in years] for row in rows]
-    return Response({"rows": rows, "cols": years_labels, "data": data, "mode": mode})
+    result = {"rows": rows, "cols": years_labels, "data": data, "mode": mode}
+    cache.set(cache_key, result, 60 * 30)  # cache 30 min
+    return Response(result)
 
 
 # ── /api/color-analysis/ ────────────────────────────────────────
-
 @api_view(["GET"])
 def api_color_analysis(request):
     import colorsys
     import traceback
 
-    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
-    print("CLOUDINARY_CLOUD_NAME =", cloud_name)
+    cached = cache.get("api_color_analysis")
+    if cached:
+        return Response(cached)
+
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
 
     try:
         images = (
@@ -525,15 +364,16 @@ def api_color_analysis(request):
                     ),
                 })
             except Exception as e:
-                print("Erreur sur img:", img, "->", e)
                 continue
 
-        print("Résultat OK, nb items:", len(result))
+        cache.set("api_color_analysis", result, 60 * 30)  # cache 30 min
         return Response(result)
 
     except Exception:
         traceback.print_exc()
         return Response({"error": "server error"}, status=500)
+
+
 # ── /api/cover-words/ ───────────────────────────────────────────
 @api_view(["GET"])
 def api_cover_words(request):
@@ -541,6 +381,11 @@ def api_cover_words(request):
     month = request.GET.get("month")
     if not year or not month:
         return Response({"error": "year and month required"}, status=400)
+
+    cache_key = f"api_cover_words_{year}_{month}"
+    cached = cache.get(cache_key)
+    if cached:
+        return Response(cached)
 
     image = Image.objects.filter(year=year, month=month).first()
     words_data = []
@@ -559,11 +404,13 @@ def api_cover_words(request):
                 filtered = (w for w in WORD_PATTERN.findall(title.lower()) if w not in STOP_WORDS)
                 all_words.extend(filtered)
         words_data = [{"name": w, "value": c} for w, c in Counter(all_words).most_common(40)]
-    return Response(
-        {
-            "year": year,
-            "month": month,
-            "cover_url": f"/media/wave_cover/{image.filename}" if image else "",
-            "words": words_data,
-        }
-    )
+
+    result = {
+        "year": year,
+        "month": month,
+        "cover_url": f"/media/wave_cover/{image.filename}" if image else "",
+        "words": words_data,
+    }
+
+    cache.set(cache_key, result, 60 * 30)  # cache 30 min
+    return Response(result)
