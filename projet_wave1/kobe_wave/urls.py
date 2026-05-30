@@ -16,7 +16,6 @@ urlpatterns = [
     path("api/categories/", api_views.api_categories, name="api_categories"),
     path("api/images/", api_views.api_images, name="api_images"),
     path("api/stats/", api_views.api_stats, name="api_stats"),
-    path("api/wordcloud/", api_views.api_wordcloud, name="api_wordcloud"),
     path("api/colors/", api_views.api_colors, name="api_colors"),
     path("wiredviz/", views.wiredviz, name="wiredviz"),
     path("api/radial/", api_views.api_radial, name="api_radial"),
