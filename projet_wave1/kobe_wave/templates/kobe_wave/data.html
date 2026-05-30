@@ -242,44 +242,56 @@ chart.on('click', { dataType: 'edge' }, params => {
 });
 
         // ── Recherche / injection ────────────────────────────────
-        document.getElementById('btnSearch').addEventListener('click', () => {
-            const word = document.getElementById('searchWord').value.trim().toLowerCase();
-            if (!word) return;
-            const option = chart.getOption();
-            let nodes = option.series[0].data;
-            let links = option.series[0].links;
-            const existing = nodes.find(n => n.name === word);
-            if (existing) {
-                highlightNode(word, nodes, links);
-            } else {
-                fetch(`/api/cooccurrence/?word=${encodeURIComponent(word)}`)
-                    .then(r => r.json())
-                    .then(apiData => {
-                        if (!apiData.links || apiData.links.length === 0) {
-                            alert(`"${word}" n'a aucune co-occurrence dans le corpus.`);
-                            return;
-                        }
-                        const newNode = {
-                            name: word, value: apiData.value || 1, symbolSize: 28, _custom: true,
-                            label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
-                            itemStyle: { color: '#facc15', borderColor: '#fff', borderWidth: 2 }
-                        };
-                        const existingNames = new Set(nodes.map(n => n.name));
-                        const newLinks = apiData.links
-                            .filter(l => existingNames.has(l.source) || existingNames.has(l.target))
-                            .map(l => ({
-                                source: l.source, target: l.target, value: l.value, _custom: true,
-                                lineStyle: { width: 1 + Math.log(l.value || 1), color: '#facc15', opacity: 0.8, curveness: 0.3 }
-                            }));
-                        nodes = [...nodes, newNode];
-                        links = [...links, ...newLinks];
-                        chart.setOption({ series: [{ data: nodes, links }] });
-                        highlightNode(word, nodes, links);
-                    })
-                    .catch(() => alert(`Impossible de charger "${word}".`));
-            }
-        });
+       document.getElementById('btnSearch').addEventListener('click', () => {
+    const word = document.getElementById('searchWord').value.trim().toLowerCase();
+    if (!word) return;
 
+    const option = chart.getOption();
+    const nodes = option.series[0].data;
+    const existing = nodes.find(n => n.name === word);
+
+    if (existing) {
+        highlightNode(word, nodes, option.series[0].links);
+        return;
+    }
+
+    fetch(`/api/cooccurrence/?word=${encodeURIComponent(word)}`)
+        .then(r => r.json())
+        .then(apiData => {
+            if (!apiData.nodes || apiData.nodes.length === 0) {
+                alert(`"${word}" n'existe pas dans le corpus.`);
+                return;
+            }
+
+            const newNodes = apiData.nodes.map(n => ({
+                name: n.id,
+                value: n.value,
+                symbolSize: Math.min(10 + (n.value / maxVal) * 50, 60),
+                _custom: n.id === word,
+                label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#333' },
+                itemStyle: {
+                    color: n.id === word ? '#facc15' : nodeColor(n.value),
+                    borderColor: '#fff', borderWidth: 1.5
+                }
+            }));
+
+            const newLinks = apiData.links.map(l => ({
+                source: l.source,
+                target: l.target,
+                value: l.value,
+                lineStyle: {
+                    width: 1 + Math.log(l.value || 1),
+                    color: '#aaaaaa',
+                    opacity: 0.4,
+                    curveness: 0.3
+                }
+            }));
+
+            chart.setOption({ series: [{ data: newNodes, links: newLinks }] }, true);
+            highlightNode(word, newNodes, newLinks);
+        })
+        .catch(() => alert(`Impossible de charger "${word}".`));
+});
         // ── Reset ────────────────────────────────────────────────
         document.getElementById('btnReset').addEventListener('click', () => {
             document.getElementById('searchWord').value = '';
