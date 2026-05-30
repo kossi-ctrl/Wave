@@ -67,11 +67,10 @@ WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 def api_cooccurrence(request):
     word = request.GET.get("word", "").lower().strip()
 
-    if word:
-        pass  # ton code existant pour CAS 1
-
     cached = cache.get("cooccurrence_graph")
-    if cached:
+    if cached and not word:
+        if word:
+            pass
         return Response(cached)
 
     top_n = int(request.GET.get("top", 30))
@@ -91,13 +90,32 @@ def api_cooccurrence(request):
     top_words = [w for w, _ in word_freq.most_common(top_n)]
     top_set = set(top_words)
 
-    nodes = []  # ton code existant
-    links = []  # ton code existant
+    # Cas recherche d'un mot spécifique
+    if word:
+        nodes = []
+        links = []
+        if word not in top_set:
+            nodes.append({"id": word, "value": word_freq.get(word, 1)})
+        for (w1, w2), count in cooccur.items():
+            if word in (w1, w2):
+                other = w2 if w1 == word else w1
+                if other in top_set:
+                    if not any(n["id"] == other for n in nodes):
+                        nodes.append({"id": other, "value": word_freq[other]})
+                    links.append({"source": w1, "target": w2, "value": count})
+        return Response({"nodes": nodes, "links": links, "value": word_freq.get(word, 1)})
+
+    # Cas général
+    nodes = [{"id": w, "value": word_freq[w]} for w in top_words]
+    links = [
+        {"source": w1, "target": w2, "value": count}
+        for (w1, w2), count in cooccur.items()
+        if w1 in top_set and w2 in top_set
+    ]
 
     result = {"nodes": nodes, "links": links}
-    cache.set("cooccurrence_graph", result, 60 * 60)  # cache 1h
+    cache.set("cooccurrence_graph", result, 60 * 60)
     return Response(result)
-
 
 # ── /api/radial/ ────────────────────────────────────────────────
 @api_view(["GET"])
