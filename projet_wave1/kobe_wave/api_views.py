@@ -91,20 +91,27 @@ def api_cooccurrence(request):
     top_set = set(top_words)
 
     # Cas recherche d'un mot spécifique
+    # Cas recherche d'un mot spécifique
     if word:
-        nodes = []
-        links = []
-        if word not in top_set:
-            nodes.append({"id": word, "value": word_freq.get(word, 1)})
+        related = {}
         for (w1, w2), count in cooccur.items():
-            if word in (w1, w2):
-                other = w2 if w1 == word else w1
-                if other in top_set:
-                    if not any(n["id"] == other for n in nodes):
-                        nodes.append({"id": other, "value": word_freq[other]})
-                    links.append({"source": w1, "target": w2, "value": count})
-        return Response({"nodes": nodes, "links": links, "value": word_freq.get(word, 1)})
+            if word == w1:
+                related[w2] = count
+            elif word == w2:
+                related[w1] = count
 
+        if not related:
+            return Response({"nodes": [], "links": [], "value": 0})
+
+        top_related = sorted(related.items(), key=lambda x: x[1], reverse=True)[:15]
+
+        nodes = [{"id": word, "value": word_freq.get(word, 1)}]
+        links = []
+        for w, count in top_related:
+            nodes.append({"id": w, "value": word_freq.get(w, 1)})
+            links.append({"source": word, "target": w, "value": count})
+
+        return Response({"nodes": nodes, "links": links, "value": word_freq.get(word, 1)})
     # Cas général
     nodes = [{"id": w, "value": word_freq[w]} for w in top_words]
     links = [
