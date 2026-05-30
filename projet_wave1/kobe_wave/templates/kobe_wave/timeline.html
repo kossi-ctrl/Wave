@@ -94,15 +94,14 @@ function renderColorChart(metric) {
                 </div>
             `
         },
-        xAxis: { type: 'value', name: 'Year', min: 1993, max: 2025, nameLocation: 'middle', nameGap: 30 },
+        xAxis: { type: 'value', name: 'Year', min: 1993, max: 2025, nameLocation: 'middle', nameGap: 30  axisLabel: {
+        formatter: value => value.toString()
+    }  },
         yAxis: {
             type: 'value',
             name: metric.charAt(0).toUpperCase() + metric.slice(1),
             min: 0, max: metric === 'hue' ? 360 : 100,
             nameLocation: 'middle', nameGap: 40,
-           axisLabel: {
-        formatter: value => value.toString()
-    }  
         },
         series: [{ type: 'scatter', data: data, symbolSize: 8, opacity: 0.7 }]
     });
