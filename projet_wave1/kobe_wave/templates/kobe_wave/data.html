@@ -290,7 +290,7 @@ document.getElementById('btnSearch').addEventListener('click', () => {
         .then(apiData => {
     console.log('mot cherché:', word);
     console.log('réponse API:', apiData);
-    if (!apiData.nodes || apiData.nodes.length === 0) {
+   
             if (!apiData.nodes || apiData.nodes.length === 0) {
                 alert(`"${word}" n'existe pas dans le corpus.`);
                 return;
