@@ -137,6 +137,18 @@ window.addEventListener('resize', () => colorChart.resize());
     fetch(`/api/heatmap/?mode=${mode}`)
         .then(r => r.json())
         .then(data => {
+
+if (mode === 'authors') {
+                const filteredIndexes = data.rows
+                    .map((r, i) => ({ r, i }))
+                    .filter(({ r }) => !r.toLowerCase().includes('wired'))
+                    .map(({ i }) => i);
+
+                data.rows = filteredIndexes.map(i => data.rows[i]);
+                data.data = filteredIndexes.map(i => data.data[i]);
+
+}
+
             const rows = data.rows;
             const cols = data.cols;
             const flat = [];
