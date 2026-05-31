@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.views.generic import ListView, DetailView, TemplateView
@@ -201,36 +202,18 @@ def contact(request):
         name = request.POST.get("name")
         email = request.POST.get("email")
         message = request.POST.get("message")
-
-        url = "https://api.brevo.com/v3/smtp/email"
-        payload = {
-            "sender": {"name": "Wave", "email": settings.DEFAULT_FROM_EMAIL},
-            "to": [{"email": settings.DEFAULT_FROM_EMAIL}],
-            "subject": f"Message de {name} via Wave",
-            "htmlContent": f"""
-                <h3>Nouveau message</h3>
-                <p><b>Nom:</b> {name}</p>
-                <p><b>Email:</b> {email}</p>
-                <p><b>Message:</b><br>{message}</p>
-            """
-        }
-        headers = {
-            "accept": "application/json",
-            "api-key": settings.BREVO_API_KEY,
-            "content-type": "application/json"
-        }
         try:
-            response = requests.post(url, json=payload, headers=headers)
-            print("STATUS:", response.status_code)
-            print("RESPONSE:", response.text)
-            if response.status_code == 201:
-                messages.success(request, "Message envoyé ✔️")
-            else:
-                messages.error(request, f"Erreur Brevo: {response.text}")
+            send_mail(
+                subject=f"Message de {name} via Wave",
+                message=f"Nom: {name}\nEmail: {email}\n\nMessage:\n{message}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.DEFAULT_FROM_EMAIL],
+                fail_silently=False,
+            )
+            messages.success(request, "Message envoyé ✔️")
         except Exception as e:
-            print("ERREUR EXCEPTION:", repr(e))
+            print("ERREUR EMAIL:", repr(e))
             messages.error(request, f"Erreur technique: {e}")
-
     return render(request, "kobe_wave/contact.html")
 
 
