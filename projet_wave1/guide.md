@@ -2,7 +2,7 @@
 
 ## Welcome to WAVE
 
-WAVE (Wired Archive of Visual Explorations) is a web application that allows you to explore and visualize data from the Kobe Wave music journal (1993–2025).
+WAVE (Wired Archive of Visual Explorations) is a web application that allows you to explore and visualize data from the USA Wired Magazine (1993–2025).
 
 **Access the application**: [https://wave-production-abb3.up.railway.app](https://wave-production-abb3.up.railway.app)
 

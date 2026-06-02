@@ -1,6 +1,6 @@
 # 🌊 WAVE — Wired Archive of Visual Explorations
 
-> A Django web application for visualizing and exploring data from the Kobe Wave music journal.
+> A Django web application for visualizing and exploring data from the USA Wired magazine.
 
 [![Python](https://img.shields.io/badge/Python-3.13-blue)](https://python.org)
 [![Django](https://img.shields.io/badge/Django-5.2.4-green)](https://djangoproject.com)
@@ -18,7 +18,7 @@
 
 ## 📖 About
 
-WAVE is an academic web application developed at the **Centre d'Études Supérieures de la Renaissance (CESR)**, Université de Tours. It allows researchers to analyze and visualize data from the **Kobe Wave** music journal, covering publications from **1993 to 2025**.
+WAVE is an academic web application developed at the **Centre d'Études Supérieures de la Renaissance (CESR)**, Université de Tours. It allows researchers to analyze and visualize data from the **Wired** magazine, covering publications from **1993 to 2025**.
 
 ### Key Features
 
@@ -37,7 +37,9 @@ WAVE is an academic web application developed at the **Centre d'Études Supérie
 | **Zangbé Kossi** | Developer |
 | **Orphée Bonnardeau** | Developer |
 
-**Supervisor**: Federico Biggio — Université de Tours, CESR
+**Supervisor**: 
+ Federico Biggio — Université de Tours, CESR
+ Carlos Gallardo — Université de Tours, CESR
 
 ---
 
