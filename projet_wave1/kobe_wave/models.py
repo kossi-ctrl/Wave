@@ -57,7 +57,7 @@ class Image(models.Model):
 
     @property
     def cover_url(self):
-        cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
         return f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{self.filename}"
 
 

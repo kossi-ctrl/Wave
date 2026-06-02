@@ -5,70 +5,275 @@ from django.db.models import Count
 from django.core.cache import cache
 from kobe_wave.models import Article, Image, Category
 from collections import Counter, defaultdict
-import cloudinary
-import cloudinary.utils
 import re
 import os
+
 from kobe_wave import precompute as pc
 
 STOP_WORDS = frozenset(
     {
         # Articles / determiners FR
-        "le", "la", "les", "un", "une", "des", "du", "au", "aux",
-        "ce", "cet", "cette", "ces", "mon", "ton", "son", "mes",
-        "tes", "ses", "notre", "votre", "leur", "leurs", "nos", "vos",
+        "le",
+        "la",
+        "les",
+        "un",
+        "une",
+        "des",
+        "du",
+        "au",
+        "aux",
+        "ce",
+        "cet",
+        "cette",
+        "ces",
+        "mon",
+        "ton",
+        "son",
+        "mes",
+        "tes",
+        "ses",
+        "notre",
+        "votre",
+        "leur",
+        "leurs",
+        "nos",
+        "vos",
         # Prepositions / conjunctions FR
-        "de", "en", "dans", "sur", "sous", "avec", "sans", "pour",
-        "par", "vers", "entre", "donc", "mais", "ainsi", "comme",
-        "puis", "car", "que", "qui", "dont", "quoi", "quand", "depuis",
-        "selon", "lors", "tout", "plus", "tres", "trop", "bien", "meme",
-        "aussi", "deja", "encore", "toujours", "jamais", "chez", "pres",
-        "apres", "avant", "pendant", "contre",
+        "de",
+        "en",
+        "dans",
+        "sur",
+        "sous",
+        "avec",
+        "sans",
+        "pour",
+        "par",
+        "vers",
+        "entre",
+        "donc",
+        "mais",
+        "ainsi",
+        "comme",
+        "puis",
+        "car",
+        "que",
+        "qui",
+        "dont",
+        "quoi",
+        "quand",
+        "depuis",
+        "selon",
+        "lors",
+        "tout",
+        "plus",
+        "tres",
+        "trop",
+        "bien",
+        "meme",
+        "aussi",
+        "deja",
+        "encore",
+        "toujours",
+        "jamais",
+        "chez",
+        "pres",
+        "apres",
+        "avant",
+        "pendant",
+        "contre",
         # Common verbs FR
-        "est", "sont", "etre", "avoir", "fait", "font", "peut", "peuvent",
-        "doit", "doivent", "faut", "vient", "devient", "reste", "sera",
-        "seront", "etait", "avait",
+        "est",
+        "sont",
+        "etre",
+        "avoir",
+        "fait",
+        "font",
+        "peut",
+        "peuvent",
+        "doit",
+        "doivent",
+        "faut",
+        "vient",
+        "devient",
+        "reste",
+        "sera",
+        "seront",
+        "etait",
+        "avait",
         # Pronouns FR
-        "il", "elle", "ils", "elles", "nous", "vous", "eux", "cela",
-        "ceci", "celui", "celle", "ceux",
+        "il",
+        "elle",
+        "ils",
+        "elles",
+        "nous",
+        "vous",
+        "eux",
+        "cela",
+        "ceci",
+        "celui",
+        "celle",
+        "ceux",
         # Articles EN
-        "the", "a", "an",
+        "the",
+        "a",
+        "an",
         # Prepositions / conjunctions EN
-        "in", "on", "at", "to", "for", "of", "and", "or", "but", "with",
-        "from", "by", "as", "into", "over", "after", "about", "than",
-        "via", "within", "between", "through", "against", "during",
-        "before", "up", "out", "off",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "and",
+        "or",
+        "but",
+        "with",
+        "from",
+        "by",
+        "as",
+        "into",
+        "over",
+        "after",
+        "about",
+        "than",
+        "via",
+        "within",
+        "between",
+        "through",
+        "against",
+        "during",
+        "before",
+        "up",
+        "out",
+        "off",
         # Auxiliary verbs EN
-        "is", "are", "was", "were", "be", "been", "has", "have", "had",
-        "will", "would", "could", "should", "may", "might", "does", "did", "do", "can",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "has",
+        "have",
+        "had",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "does",
+        "did",
+        "do",
+        "can",
         # Pronouns EN
-        "it", "its", "this", "that", "they", "their", "there", "which",
-        "who", "what", "how", "when", "where", "why", "he", "she", "his",
-        "her", "we", "our", "you", "your", "us", "my",
+        "it",
+        "its",
+        "this",
+        "that",
+        "they",
+        "their",
+        "there",
+        "which",
+        "who",
+        "what",
+        "how",
+        "when",
+        "where",
+        "why",
+        "he",
+        "she",
+        "his",
+        "her",
+        "we",
+        "our",
+        "you",
+        "your",
+        "us",
+        "my",
         # Adverbs / filler words EN
-        "not", "no", "so", "if", "just", "now", "also", "even", "still",
-        "back", "most", "more", "all", "then", "here", "only", "very",
-        "too", "yet", "both", "each", "other", "such", "same", "new",
+        "not",
+        "no",
+        "so",
+        "if",
+        "just",
+        "now",
+        "also",
+        "even",
+        "still",
+        "back",
+        "most",
+        "more",
+        "all",
+        "then",
+        "here",
+        "only",
+        "very",
+        "too",
+        "yet",
+        "both",
+        "each",
+        "other",
+        "such",
+        "same",
+        "new",
         # Generic verbs EN
-        "get", "make", "made", "use", "used", "using", "say", "says",
-        "said", "want", "need", "look", "know", "take", "come", "give",
-        "find", "think", "see", "like", "show",
+        "get",
+        "make",
+        "made",
+        "use",
+        "used",
+        "using",
+        "say",
+        "says",
+        "said",
+        "want",
+        "need",
+        "look",
+        "know",
+        "take",
+        "come",
+        "give",
+        "find",
+        "think",
+        "see",
+        "like",
+        "show",
         # Time-related
-        "time", "year", "years", "day", "days", "week", "month", "today",
-        "last", "first", "one", "two", "three", "ans", "jour", "mois",
-        "semaine", "fois",
+        "time",
+        "year",
+        "years",
+        "day",
+        "days",
+        "week",
+        "month",
+        "today",
+        "last",
+        "first",
+        "one",
+        "two",
+        "three",
+        "ans",
+        "jour",
+        "mois",
+        "semaine",
+        "fois",
     }
 )
 
 WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 
 # ── /api/cooccurrence/ ──────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_cooccurrence(request):
     word = request.GET.get("word", "").lower().strip()
 
     if not pc.is_ready:
-        return Response({"error": "Précalcul en cours, réessayez dans quelques secondes."}, status=503)
+        return Response(
+            {"error": "Précalcul en cours, réessayez dans quelques secondes."}, status=503
+        )
 
     if not word:
         cached = cache.get("cooccurrence_graph")
@@ -93,7 +298,9 @@ def api_cooccurrence(request):
         if not related:
             return Response({"nodes": [], "links": [], "value": 0})
 
-        top_related = sorted(related.items(), key=lambda x: x[1], reverse=True)[:15]
+        top_related = sorted(
+            related.items(), key=lambda x: x[1], reverse=True
+        )[:15]
         nodes = [{"id": word, "value": pc.word_freq.get(word, 1)}]
         links = []
         for w, count in top_related:
@@ -116,9 +323,10 @@ def api_cooccurrence(request):
     result = {"nodes": nodes, "links": links}
     cache.set("cooccurrence_graph", result, 60 * 60)
     return Response(result)
-    return Response(result)
 
 # ── /api/radial/ ────────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_radial(request):
     cached = cache.get("api_radial")
@@ -160,8 +368,9 @@ def api_radial(request):
     cache.set("api_radial", result, 60 * 30)  # cache 30 min
     return Response(result)
 
-
 # ── /api/articles_cooccurrence/ ─────────────────────────────────
+
+
 @api_view(["GET"])
 def api_articles_cooccurrence(request):
     w1 = request.GET.get("w1", "").strip()
@@ -175,8 +384,9 @@ def api_articles_cooccurrence(request):
     )
     return Response(ArticleSerializer(qs, many=True).data)
 
-
 # ── /api/articles/ ──────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_articles(request):
     qs = Article.objects.select_related("category", "image").all()
@@ -190,15 +400,17 @@ def api_articles(request):
         qs = qs.filter(title__icontains=request.GET["q"])
     return Response(ArticleSerializer(qs[:100], many=True).data)
 
-
 # ── /api/categories/ ────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_categories(request):
     qs = Category.objects.annotate(total=Count("article")).order_by("-total")
     return Response([{"id": c.id_category, "name": c.name, "total": c.total} for c in qs])
 
-
 # ── /api/images/ ────────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_images(request):
     qs = Image.objects.all()
@@ -206,8 +418,9 @@ def api_images(request):
         qs = qs.filter(year=request.GET["year"])
     return Response(ImageSerializer(qs[:100], many=True).data)
 
-
 # ── /api/stats/ ─────────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_stats(request):
     cached = cache.get("api_stats")
@@ -223,8 +436,9 @@ def api_stats(request):
     cache.set("api_stats", result, 60 * 10)  # cache 10 min
     return Response(result)
 
-
 # ── /api/covers/ ─────────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_covers(request):
     cached = cache.get("api_covers")
@@ -243,7 +457,10 @@ def api_covers(request):
     result = [
         {
             "id": img.id_image,
-            "url": f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{img.filename}.jpg",
+            "url": (
+                f"https://res.cloudinary.com/{cloud_name}/image/upload/"
+                f"wave_cover/{img.filename}.jpg"
+            ),
             "year": img.year,
             "month": img.month,
             "hex": img.hexadecimal or "#cccccc",
@@ -258,8 +475,9 @@ def api_covers(request):
     cache.set("api_covers", result, 60 * 30)  # cache 30 min
     return Response(result)
 
-
 # ── /api/colors/ ────────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_colors(request):
     category = request.GET.get("category", "")
@@ -272,13 +490,16 @@ def api_colors(request):
     qs = Image.objects.all()
     if category:
         qs = qs.filter(article__category__name__icontains=category)
-    colors = list(qs.values("hexadecimal").annotate(total=Count("id_image")).order_by("-total")[:20])
+    colors = list(
+        qs.values("hexadecimal").annotate(total=Count("id_image")).order_by("-total")[:20]
+    )
 
     cache.set(cache_key, colors, 60 * 30)  # cache 30 min
     return Response(colors)
 
-
 # ── /api/heatmap/ ────────────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_heatmap(request):
     mode = request.GET.get("mode", "words")
@@ -344,8 +565,9 @@ def api_heatmap(request):
     cache.set(cache_key, result, 60 * 30)  # cache 30 min
     return Response(result)
 
-
 # ── /api/color-analysis/ ────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_color_analysis(request):
     import colorsys
@@ -369,20 +591,25 @@ def api_color_analysis(request):
             if len(hex_color) != 6:
                 continue
             try:
-                r, g, b = (int(hex_color[i: i + 2], 16) / 255 for i in (0, 2, 4))
+                r, g, b = (int(hex_color[i : i + 2], 16) / 255 for i in (0, 2, 4))
                 h, s, v = colorsys.rgb_to_hsv(r, g, b)
-                result.append({
-                    "hex": "#" + hex_color,
-                    "year": img["year"],
-                    "hue": round(h * 360, 1),
-                    "saturation": round(s * 100, 1),
-                    "brightness": round(v * 100, 1),
-                    "cover_url": (
-                        f"https://res.cloudinary.com/{cloud_name}/image/upload/wave_cover/{img['filename']}.jpg"
-                        if img["filename"] else None
-                    ),
-                })
-            except Exception as e:
+                cover_url = None
+                if img["filename"]:
+                    cover_url = (
+                        f"https://res.cloudinary.com/{cloud_name}/image/upload/"
+                        f"wave_cover/{img['filename']}.jpg"
+                    )
+                result.append(
+                    {
+                        "hex": "#" + hex_color,
+                        "year": img["year"],
+                        "hue": round(h * 360, 1),
+                        "saturation": round(s * 100, 1),
+                        "brightness": round(v * 100, 1),
+                        "cover_url": cover_url,
+                    }
+                )
+            except Exception:
                 continue
 
         cache.set("api_color_analysis", result, 60 * 30)  # cache 30 min
@@ -392,8 +619,9 @@ def api_color_analysis(request):
         traceback.print_exc()
         return Response({"error": "server error"}, status=500)
 
-
 # ── /api/cover-words/ ───────────────────────────────────────────
+
+
 @api_view(["GET"])
 def api_cover_words(request):
     year = request.GET.get("year")

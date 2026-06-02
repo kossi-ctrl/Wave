@@ -7,13 +7,9 @@ from kobe_wave.models import Article, Image, Category
 from collections import Counter
 from django.contrib import messages
 from django.conf import settings
-from django.http import JsonResponse
-from django.db.models import Q
 import json
 import calendar
 import re
-import requests
-
 
 # -----------------------
 # 🔍 API CO-OCCURRENCE
@@ -23,16 +19,109 @@ import requests
 # -----------------------
 
 STOP_WORDS = {
-    "the","a","an","is","in","on","at","to","for","of","and","or",
-    "but","it","its","this","that","with","are","was","be","as","by",
-    "from","has","have","how","what","why","when","who","will","can",
-    "about","up","out","not","no","so","do","if","your","you","we",
-    "our","they","their","new","get","more","all","into","over","just",
-    "now","like","then","could","would","should","there","been","were",
-    "which","even","most","also","back","make","made","may","one","two",
-    "three","first","last","here","still","us","he","she","his","her",
-    "does","did","had","via","say","says","want","need","use","used",
-    "using","look","way","time","year","very","some","been","have","only",
+    "the",
+    "a",
+    "an",
+    "is",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+    "of",
+    "and",
+    "or",
+    "but",
+    "it",
+    "its",
+    "this",
+    "that",
+    "with",
+    "are",
+    "was",
+    "be",
+    "as",
+    "by",
+    "from",
+    "has",
+    "have",
+    "how",
+    "what",
+    "why",
+    "when",
+    "who",
+    "will",
+    "can",
+    "about",
+    "up",
+    "out",
+    "not",
+    "no",
+    "so",
+    "do",
+    "if",
+    "your",
+    "you",
+    "we",
+    "our",
+    "they",
+    "their",
+    "new",
+    "get",
+    "more",
+    "all",
+    "into",
+    "over",
+    "just",
+    "now",
+    "like",
+    "then",
+    "could",
+    "would",
+    "should",
+    "there",
+    "been",
+    "were",
+    "which",
+    "even",
+    "most",
+    "also",
+    "back",
+    "make",
+    "made",
+    "may",
+    "one",
+    "two",
+    "three",
+    "first",
+    "last",
+    "here",
+    "still",
+    "us",
+    "he",
+    "she",
+    "his",
+    "her",
+    "does",
+    "did",
+    "had",
+    "via",
+    "say",
+    "says",
+    "want",
+    "need",
+    "use",
+    "used",
+    "using",
+    "look",
+    "way",
+    "time",
+    "year",
+    "very",
+    "some",
+    "been",
+    "have",
+    "only",
 }
 
 
@@ -63,10 +152,7 @@ def explore_word(request):
                     pair = tuple(sorted([token_list[i], token_list[j]]))
                     co_counts[pair] += 1
 
-        nodes = [
-            {"id": w, "value": word_freq[w]}
-            for w in top_words
-        ]
+        nodes = [{"id": w, "value": word_freq[w]} for w in top_words]
 
         links = [
             {"source": p[0], "target": p[1], "value": c}
@@ -94,11 +180,7 @@ def explore_word(request):
 
     top_pairs = co_counts.most_common(20)
 
-    links = [
-        {"source": p[0], "target": p[1], "value": c}
-        for p, c in top_pairs
-        if c >= 2
-    ]
+    links = [{"source": p[0], "target": p[1], "value": c} for p, c in top_pairs if c >= 2]
 
     neighbor_words = set()
     for p, _ in top_pairs:
@@ -121,9 +203,9 @@ def api_articles(request):
     q = request.GET.get("q", "").strip()
     if not q:
         return JsonResponse([], safe=False)
-    articles = Article.objects.filter(title__icontains=q).values(
-        "id_articles", "title", "author"
-    )[:50]
+    articles = Article.objects.filter(title__icontains=q).values("id_articles", "title", "author")[
+        :50
+    ]
     return JsonResponse(list(articles), safe=False)
 
 
@@ -136,11 +218,11 @@ def api_articles_cooccurrence(request):
     w2 = request.GET.get("w2", "").strip()
     if not w1 or not w2:
         return JsonResponse([], safe=False)
-    articles = Article.objects.filter(
-        title__icontains=w1
-    ).filter(
-        title__icontains=w2
-    ).values("id_articles", "title", "author")[:50]
+    articles = (
+        Article.objects.filter(title__icontains=w1)
+        .filter(title__icontains=w2)
+        .values("id_articles", "title", "author")[:50]
+    )
     return JsonResponse(list(articles), safe=False)
 
 
@@ -151,9 +233,9 @@ def api_articles_cooccurrence(request):
 def api_radial(request):
     STOP_WORDS_RADIAL = STOP_WORDS | {"wired", "review", "best", "guide", "inside"}
 
-    titles = Article.objects.select_related("category").values_list(
-        "title", "category__name"
-    )[:20000]
+    titles = Article.objects.select_related("category").values_list("title", "category__name")[
+        :20000
+    ]
 
     all_words = []
     for title, _ in titles:
@@ -184,9 +266,8 @@ def api_radial(request):
         {
             "word": w,
             "by_category": [
-                {"category": cat, "count": word_cat_counts[w].get(cat, 0)}
-                for cat in categories
-            ]
+                {"category": cat, "count": word_cat_counts[w].get(cat, 0)} for cat in categories
+            ],
         }
         for w in top_words
     ]
@@ -451,9 +532,18 @@ class ArticleListView(ListView):
             .order_by("created_at__year")
         )
         context["months"] = {
-            1: "January", 2: "February", 3: "March", 4: "April",
-            5: "May", 6: "June", 7: "July", 8: "August",
-            9: "September", 10: "October", 11: "November", 12: "December",
+            1: "January",
+            2: "February",
+            3: "March",
+            4: "April",
+            5: "May",
+            6: "June",
+            7: "July",
+            8: "August",
+            9: "September",
+            10: "October",
+            11: "November",
+            12: "December",
         }
         context["total_articles"] = self.get_queryset().count()
         return context
@@ -494,9 +584,18 @@ class CategoryDetailView(DetailView):
 
 def imaginaries(request):
     TECH_CATS = [
-        "Science", "Security", "Artificial Intelligence", "Transportation",
-        "Robots", "Cloud Computing", "Apps", "Phones", "Design",
-        "Business", "Culture", "Gear",
+        "Science",
+        "Security",
+        "Artificial Intelligence",
+        "Transportation",
+        "Robots",
+        "Cloud Computing",
+        "Apps",
+        "Phones",
+        "Design",
+        "Business",
+        "Culture",
+        "Gear",
     ]
 
     evo_raw = (
@@ -529,7 +628,13 @@ def imaginaries(request):
     radar_data = [radar_map.get(c, 0) for c in TECH_CATS]
 
     STOP_WORDS_CLOUD = STOP_WORDS | {
-        "wired", "review", "best", "guide", "inside", "more", "about",
+        "wired",
+        "review",
+        "best",
+        "guide",
+        "inside",
+        "more",
+        "about",
     }
 
     titles = Article.objects.values_list("title", flat=True)[:50000]
@@ -594,10 +699,7 @@ def imaginaries(request):
 
 def explore(request):
     categories = (
-        Category.objects
-        .annotate(total=Count("article"))
-        .filter(total__gt=0)
-        .order_by("-total")
+        Category.objects.annotate(total=Count("article")).filter(total__gt=0).order_by("-total")
     )
     context = {
         "categories": json.dumps([c.name for c in categories]),
