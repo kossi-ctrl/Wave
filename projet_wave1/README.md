@@ -57,7 +57,29 @@ WAVE is an academic web application developed at the **Centre d'Études Supérie
 
 ---
 
-## 🚀 Quick Start
+## � Branches
+
+- **`main`** — Branche principale (code actuel en production)
+- **`version-before-deploy`** — Snapshot avant déploiement
+- **`version-after-deploy`** — Snapshot après déploiement
+
+### Utilisation des branches
+
+```bash
+# Voir les branches
+git branch -a
+
+# Basculer vers une branche
+git checkout version-before-deploy
+git checkout version-after-deploy
+
+# Créer une branche pour une nouvelle feature
+git checkout -b feature/ma-feature
+```
+
+---
+
+## �🚀 Quick Start
 
 ### Prerequisites
 
