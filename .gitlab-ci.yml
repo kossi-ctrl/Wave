@@ -7,6 +7,7 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   DJANGO_SETTINGS_MODULE: "projet_wave1.settings"
+  USE_SQLITE: "True"
 
 cache:
   paths:
@@ -25,18 +26,7 @@ lint:flake8:
 
 test:unit:
   stage: test
-  services:
-    - postgres:15
   variables:
-    POSTGRES_DB: wave_kobe_db
-    POSTGRES_USER: wave_kobe
-    POSTGRES_PASSWORD: testpassword
-    POSTGRES_HOST_AUTH_METHOD: trust
-    PGDATABASE: wave_kobe_db
-    PGUSER: wave_kobe
-    PGPASSWORD: testpassword
-    PGHOST: postgres
-    PGPORT: "5432"
     SECRET_KEY: "test-secret-key-for-ci"
     DEBUG: "True"
     CLOUDINARY_CLOUD_NAME: "test"
