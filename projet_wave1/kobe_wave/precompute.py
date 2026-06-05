@@ -112,7 +112,7 @@ STOP_WORDS = set(
     ]
 )
 
-WORD_PATTERN = re.compile(r"\b[a-z]{3, }\b")
+WORD_PATTERN = re.compile(r"\b[a-z]{3,}\b")
 
 word_freq = Counter()
 cooccur = defaultdict(int)

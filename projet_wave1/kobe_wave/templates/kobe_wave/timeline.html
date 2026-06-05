@@ -44,7 +44,7 @@
                     <button class="btn btn-sm btn-light" id="modeCategories">Categories</button>
                     <button class="btn btn-sm btn-light" id="modeAuthors">Authors</button>
                 </div>
-                <div id="imaginaryChart" style="height:450px;"></div>
+                <div id="imaginaryChart" style="height:1200px;"></div>
             </div>
         </div>
         <div class="col-md-4 d-flex align-items-center">
@@ -150,15 +150,16 @@ document.getElementById('colorMetric').addEventListener('change', function () {
 window.addEventListener('resize', () => colorChart.resize());
 
     // Heatmap
-    const imaginaryChart = echarts.init(document.getElementById('imaginaryChart'));
-    window.addEventListener('resize', () => imaginaryChart.resize());
+   const imaginaryChart = echarts.init(document.getElementById('imaginaryChart'));
+window.addEventListener('resize', () => imaginaryChart.resize());
 
-   function loadHeatmap(mode = 'words') {
+function loadHeatmap(mode = 'words') {
     fetch(`/api/heatmap/?mode=${mode}`)
         .then(r => r.json())
         .then(data => {
 
-if (mode === 'authors') {
+            // Filtre auteurs
+            if (mode === 'authors') {
                 const filteredIndexes = data.rows
                     .map((r, i) => ({ r, i }))
                     .filter(({ r }) => !r.toLowerCase().includes('wired'))
@@ -166,27 +167,38 @@ if (mode === 'authors') {
 
                 data.rows = filteredIndexes.map(i => data.rows[i]);
                 data.data = filteredIndexes.map(i => data.data[i]);
-
-}
+            }
 
             const rows = data.rows;
             const cols = data.cols;
+
+            // Filtre années <= 2020
+            const filteredColIndexes = cols
+                .map((c, i) => ({ c, i }))
+                .filter(({ c }) => parseInt(c) <= 2020)
+                .map(({ i }) => i);
+
+            const filteredCols = filteredColIndexes.map(i => cols[i]);
+
             const flat = [];
             data.data.forEach((rowData, ri) => {
-                rowData.forEach((val, ci) => flat.push([ci, ri, val]));
+                filteredColIndexes.forEach((ci) => {
+                    flat.push([filteredColIndexes.indexOf(ci), ri, rowData[ci]]);
+                });
             });
+
             const maxVal = Math.max(...flat.map(d => d[2]), 1);
 
             imaginaryChart.setOption({
                 tooltip: {
-                    formatter: p => `<b>${rows[p.data[1]]}</b><br/>${cols[p.data[0]]}: <b>${p.data[2]}</b>`
+                    formatter: p => `<b>${rows[p.data[1]]}</b><br/>${filteredCols[p.data[0]]}: <b>${p.data[2]}</b>`
                 },
-                grid: { left: 160, right: 20, bottom: 60, top: 20 },
+                grid: { left: 160, right: 40, bottom: 120, top: 40 },
                 xAxis: {
                     type: 'category',
-                    data: cols,
+                    data: filteredCols,
                     splitArea: { show: true },
-                    axisLabel: { interval: 2, rotate: 45, fontSize: 10 }
+                    axisLabel: { interval: 0, rotate: 45, fontSize: 10 }
                 },
                 yAxis: {
                     type: 'category',
@@ -199,7 +211,7 @@ if (mode === 'authors') {
                     calculable: true,
                     orient: 'horizontal',
                     left: 'center',
-                    bottom: 0,
+                    bottom: 10,
                     inRange: { color: ['#e8f4fc', '#0369a1'] },
                 },
                 series: [{
@@ -213,14 +225,14 @@ if (mode === 'authors') {
         });
 }
 
-    ['modeWords', 'modeCategories', 'modeAuthors'].forEach(id => {
-        document.getElementById(id).addEventListener('click', function() {
-            document.querySelectorAll('#modeWords, #modeCategories, #modeAuthors').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            loadHeatmap(id.replace('mode', '').toLowerCase());
-        });
+['modeWords', 'modeCategories', 'modeAuthors'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function() {
+        document.querySelectorAll('#modeWords, #modeCategories, #modeAuthors').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        loadHeatmap(id.replace('mode', '').toLowerCase());
     });
+});
 
-    loadHeatmap('words');
+loadHeatmap('words');
 </script>
 {% endblock %}

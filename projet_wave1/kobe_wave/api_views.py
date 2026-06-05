@@ -326,7 +326,6 @@ def api_cooccurrence(request):
 
 # ── /api/radial/ ────────────────────────────────────────────────
 
-
 @api_view(["GET"])
 def api_radial(request):
     cached = cache.get("api_radial")
@@ -346,28 +345,35 @@ def api_radial(request):
                 word_total[word] += 1
 
     top_words = [w for w, _ in word_total.most_common(15)]
+
     all_cats = list(
         Category.objects.annotate(total=Count("article"))
         .order_by("-total")
         .values_list("name", flat=True)
     )
+
+    # Ne garder que les catégories avec au moins 1 occurrence dans les top words
+    active_cats = [
+        cat for cat in all_cats
+        if any(word_cat[w].get(cat, 0) > 0 for w in top_words)
+    ]
+
     result = {
         "words": [
             {
                 "word": w,
                 "total": word_total[w],
                 "by_category": [
-                    {"category": cat, "count": word_cat[w].get(cat, 0)} for cat in all_cats
+                    {"category": cat, "count": word_cat[w].get(cat, 0)} for cat in active_cats
                 ],
             }
             for w in top_words
         ],
-        "categories": all_cats,
+        "categories": active_cats,
     }
 
-    cache.set("api_radial", result, 60 * 30)  # cache 30 min
+    cache.set("api_radial", result, 60 * 30)
     return Response(result)
-
 # ── /api/articles_cooccurrence/ ─────────────────────────────────
 
 
