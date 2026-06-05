@@ -15,8 +15,7 @@
                  Hover on a node to preview its total occurrences;
                  click to isolate its immediate neighbors and highlight
                  the stories that mention that term in the panel below the chart.
-                 Edges respond to the cursor as well: hovering reveals the exact article titles that connect the two concepts,
-                 while clicking pins those titles for later reading. Use the search bar to explore any word from the corpus — the graph rebuilds around that word and its closest connections.
+                 Use the search bar to explore any word from the corpus.
                  Press RESET to return to the default top-30 view.
             </p>
         </div>
@@ -81,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let maxVal = 1;
     let originalNodes = [];
     let originalLinks = [];
+    let lastClickType = null;
 
     chart = echarts.init(document.getElementById('networkChart'));
     radialChart = echarts.init(document.getElementById('radialChart'));
@@ -204,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Clic edge ────────────────────────────────────────
     chart.on('click', { dataType: 'edge' }, params => {
+        lastClickType = 'edge';
         const w1 = params.data.source, w2 = params.data.target;
         const option = chart.getOption();
         const nodes = option.series[0].data;
@@ -244,6 +245,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Clic node ────────────────────────────────────────
     chart.on('click', { dataType: 'node' }, params => {
+        if (lastClickType === 'edge') {
+            lastClickType = null;
+            return;
+        }
+        lastClickType = 'node';
         const word = params.name;
         const option = chart.getOption();
         highlightNode(word, option.series[0].data, option.series[0].links);
