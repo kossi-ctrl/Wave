@@ -6,7 +6,7 @@ stages:
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  DJANGO_SETTINGS_MODULE: "projet_wave1.settings"
+  DJANGO_SETTINGS_MODULE: "projet_wave1.settings"  
   USE_SQLITE: "True"
 
 cache:
@@ -21,7 +21,7 @@ default:
 lint:flake8:
   stage: lint
   script:
-    flake8 . --max-line-length=100 --extend-ignore=E203 --exclude=env/,venv/,migrations/,Echarts/,fichiers_code_jmerise/,sanstitre3.py
+    - flake8 . --max-line-length=100 --extend-ignore=E203 --exclude=env/,venv/,migrations/,Echarts/,fichiers_code_jmerise/,sanstitre3.py
   allow_failure: false
 
 test:unit:
@@ -33,7 +33,6 @@ test:unit:
     CLOUDINARY_API_KEY: "test"
     CLOUDINARY_API_SECRET: "test"
   script:
-    - cd projet_wave1
     - python3 -m coverage run manage.py test kobe_wave
     - python3 -m coverage report
     - python3 -m coverage xml
@@ -42,6 +41,6 @@ test:unit:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: projet_wave1/coverage.xml
+        path: coverage.xml
     expire_in: 3 months
   allow_failure: false
