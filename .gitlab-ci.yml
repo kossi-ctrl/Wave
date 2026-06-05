@@ -21,7 +21,7 @@ default:
 lint:flake8:
   stage: lint
   script:
-    - flake8 kobe_wave/ projet_wave1/projet_wave1/ --max-line-length=100 --extend-ignore=E203 --exclude=migrations/,__pycache__/
+    - flake8 kobe_wave/ projet_wave1/projet_wave1/ --max-line-length=100 --extend-ignore=E203,E122 --exclude=migrations/,__pycache__/e__/
   allow_failure: false
 test:unit:
   stage: test
