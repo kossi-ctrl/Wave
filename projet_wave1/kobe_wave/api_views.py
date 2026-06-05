@@ -263,6 +263,7 @@ STOP_WORDS = frozenset(
 
 WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 
+
 # ── /api/cooccurrence/ ──────────────────────────────────────────
 
 
@@ -324,7 +325,9 @@ def api_cooccurrence(request):
     cache.set("cooccurrence_graph", result, 60 * 60)
     return Response(result)
 
+
 # ── /api/radial/ ────────────────────────────────────────────────
+
 
 @api_view(["GET"])
 def api_radial(request):
@@ -352,7 +355,6 @@ def api_radial(request):
         .values_list("name", flat=True)
     )
 
-    # Ne garder que les catégories avec au moins 1 occurrence dans les top words
     active_cats = [
         cat for cat in all_cats
         if any(word_cat[w].get(cat, 0) > 0 for w in top_words)
@@ -392,6 +394,7 @@ def api_articles_cooccurrence(request):
     )
     return Response(ArticleSerializer(qs, many=True).data)
 
+
 # ── /api/articles/ ──────────────────────────────────────────────
 
 
@@ -408,6 +411,7 @@ def api_articles(request):
         qs = qs.filter(title__icontains=request.GET["q"])
     return Response(ArticleSerializer(qs[:100], many=True).data)
 
+
 # ── /api/categories/ ────────────────────────────────────────────
 
 
@@ -415,6 +419,7 @@ def api_articles(request):
 def api_categories(request):
     qs = Category.objects.annotate(total=Count("article")).order_by("-total")
     return Response([{"id": c.id_category, "name": c.name, "total": c.total} for c in qs])
+
 
 # ── /api/images/ ────────────────────────────────────────────────
 
@@ -425,6 +430,7 @@ def api_images(request):
     if request.GET.get("year"):
         qs = qs.filter(year=request.GET["year"])
     return Response(ImageSerializer(qs[:100], many=True).data)
+
 
 # ── /api/stats/ ─────────────────────────────────────────────────
 
@@ -441,8 +447,9 @@ def api_stats(request):
         "categories": Category.objects.count(),
     }
 
-    cache.set("api_stats", result, 60 * 10)  # cache 10 min
+    cache.set("api_stats", result, 60 * 10)
     return Response(result)
+
 
 # ── /api/covers/ ─────────────────────────────────────────────────
 
@@ -480,8 +487,9 @@ def api_covers(request):
         for img in images
     ]
 
-    cache.set("api_covers", result, 60 * 30)  # cache 30 min
+    cache.set("api_covers", result, 60 * 30)
     return Response(result)
+
 
 # ── /api/colors/ ────────────────────────────────────────────────
 
@@ -502,8 +510,9 @@ def api_colors(request):
         qs.values("hexadecimal").annotate(total=Count("id_image")).order_by("-total")[:20]
     )
 
-    cache.set(cache_key, colors, 60 * 30)  # cache 30 min
+    cache.set(cache_key, colors, 60 * 30)
     return Response(colors)
+
 
 # ── /api/heatmap/ ────────────────────────────────────────────────
 
@@ -570,8 +579,9 @@ def api_heatmap(request):
 
     data = [[map_[row][y] for y in years] for row in rows]
     result = {"rows": rows, "cols": years_labels, "data": data, "mode": mode}
-    cache.set(cache_key, result, 60 * 30)  # cache 30 min
+    cache.set(cache_key, result, 60 * 30)
     return Response(result)
+
 
 # ── /api/color-analysis/ ────────────────────────────────────────
 
@@ -599,7 +609,7 @@ def api_color_analysis(request):
             if len(hex_color) != 6:
                 continue
             try:
-                r, g, b = (int(hex_color[i : i + 2], 16) / 255 for i in (0, 2, 4))
+                r, g, b = (int(hex_color[i: i + 2], 16) / 255 for i in (0, 2, 4))
                 h, s, v = colorsys.rgb_to_hsv(r, g, b)
                 cover_url = None
                 if img["filename"]:
@@ -620,12 +630,13 @@ def api_color_analysis(request):
             except Exception:
                 continue
 
-        cache.set("api_color_analysis", result, 60 * 30)  # cache 30 min
+        cache.set("api_color_analysis", result, 60 * 30)
         return Response(result)
 
     except Exception:
         traceback.print_exc()
         return Response({"error": "server error"}, status=500)
+
 
 # ── /api/cover-words/ ───────────────────────────────────────────
 
@@ -667,5 +678,5 @@ def api_cover_words(request):
         "words": words_data,
     }
 
-    cache.set(cache_key, result, 60 * 30)  # cache 30 min
+    cache.set(cache_key, result, 60 * 30)
     return Response(result)
