@@ -118,21 +118,21 @@ word_freq = Counter()
 cooccur = defaultdict(int)
 is_ready = False
 
-
 def precompute():
     global is_ready
     from kobe_wave.models import Article
-
     print("⚙️  Précalcul des co-occurrences en cours...")
-    for title in Article.objects.values_list("title", flat=True).iterator(chunk_size=2000):
-        if not title:
-            continue
-        words = list(set(w for w in WORD_PATTERN.findall(title.lower()) if w not in STOP_WORDS))
-        for w in words:
-            word_freq[w] += 1
-        for i in range(len(words)):
-            for j in range(i + 1, len(words)):
-                cooccur[tuple(sorted([words[i], words[j]]))] += 1
-
-    is_ready = True
-    print(f"✅ Précalcul terminé — {len(word_freq)} mots, {len(cooccur)} paires")
+    try:
+        for title in Article.objects.values_list("title", flat=True).iterator(chunk_size=2000):
+            if not title:
+                continue
+            words = list(set(w for w in WORD_PATTERN.findall(title.lower()) if w not in STOP_WORDS))
+            for w in words:
+                word_freq[w] += 1
+            for i in range(len(words)):
+                for j in range(i + 1, len(words)):
+                    cooccur[tuple(sorted([words[i], words[j]]))] += 1
+        is_ready = True
+        print(f"✅ Précalcul terminé — {len(word_freq)} mots, {len(cooccur)} paires")
+    except Exception:
+        print("⚠️  Précalcul ignoré — base de données non disponible")
