@@ -211,4 +211,3 @@ BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 # CI SAFE FLAG (IMPORTANT)
 # -----------------------------
 RUN_PRECOMPUTE = os.environ.get("RUN_PRECOMPUTE", "False") == "True"
-
