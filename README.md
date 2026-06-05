@@ -1,250 +1,157 @@
-# 🌊 Wave
+# 🌊 WAVE — Wired Archive of Visual Explorations
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/Django-4.x-092E20?style=flat&logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![GitLab CI](https://img.shields.io/badge/GitLab%20CI-passing-FC6D26?style=flat&logo=gitlab&logoColor=white)](/.gitlab-ci.yml)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+> A Django web application for visualizing and exploring data from the USA Wired magazine.
 
-> > Application web Django pour analyser et visualiser les données du magazine Wired (articles, tendances, thèmes et auteurs).  
-
-
----
-
-## 📋 Table des matières
-
-- [🌊 Wave](#-wave)
-  - [📋 Table des matières](#-table-des-matières)
-  - [🔭 Aperçu](#-aperçu)
-  - [✨ Fonctionnalités](#-fonctionnalités)
-  - [🛠 Stack technique](#-stack-technique)
-  - [📦 Prérequis](#-prérequis)
-  - [🚀 Installation rapide](#-installation-rapide)
-  - [⚙️ Configuration](#️-configuration)
-  - [▶️ Lancer le projet](#️-lancer-le-projet)
-  - [🧪 Tests](#-tests)
-  - [📁 Structure du projet](#-structure-du-projet)
-  - [📚 Documentation](#-documentation)
-  - [🤝 Contribuer](#-contribuer)
-  - [📄 Licence](#-licence)
-  - [👥 Équipe Kobe](#-équipe-kobe)
+[![Python](https://img.shields.io/badge/Python-3.13-blue)](https://python.org)
+[![Django](https://img.shields.io/badge/Django-5.2.4-green)](https://djangoproject.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)](https://postgresql.org)
+[![Railway](https://img.shields.io/badge/Hosted%20on-Railway-purple)](https://railway.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
 
-## 🔭 Aperçu
+## 🌐 Live Demo
 
-Wave est une application web développée avec Django permettant d'explorer et d'analyser les contenus du magazine Wired à travers 
-des visualisations interactives : graphes de connaissance, nuages 
-de mots, diagrammes de tendances et analyse des auteurs et thèmes.
-
-**Démo :** [https://wave.exemple.com](https://wave.exemple.com)  
-**Documentation complète :** [docs/](./docs/)
+**[https://wave-production-abb3.up.railway.app](https://wave-production-abb3.up.railway.app)**
 
 ---
 
-## ✨ Fonctionnalités
+## 📖 About
 
-- ✅ Visualisation des articles par catégories, par année et mois
-- ✅ Visualisation des image spar année
-- ✅ Evolution des thèmes technologiques par année
-- ✅ Explorer les données par catégorie, année, auteur et mots-clés
-- ✅ Analyse des couleurs 
-- ✅ Liens entre mots co-occurents dans les titres
-- ✅ Les Mots-Clés principaux par catégorie 
-- ✅ Distribution mensuelle des articles
-- ✅ Nuages des mots interactifs
-- 🚧 [Fonctionnalité en cours]
+WAVE is an academic web application developed at the **Centre d'Études Supérieures de la Renaissance (CESR)**, Université de Tours. It allows researchers to analyze and visualize data from the **Wired** magazine, covering publications from **1993 to 2025**.
 
----
+### Key Features
 
-## 🛠 Stack technique
-
-| Couche        | Technologie              |
-|---------------|--------------------------|
-| Backend       | Python 3.11+, Django 4.x |
-| Base de données | PostgreSQL 15+          |
-| Frontend      | HTML5, CSS3, JS (Django Templates) |
-| CI/CD         | GitLab CI                |
-| Déploiement   | Docker + Docker Compose  |
+- 📊 **Interactive visualizations** — word clouds, heatmaps, co-occurrence networks, radial charts
+- 🖼️ **Covers Library** — browse every cover from 1993 to 2025 with color analysis
+- 📰 **Article Explorer** — search and filter 193,379 articles by category, author, year
+- 🎨 **Color Analysis** — analyze dominant colors of magazine covers
+- 🔗 **REST API** — programmatic access to all data
 
 ---
 
-## 📦 Prérequis
+## 👥 Authors
 
-- Python **3.11+**
-- pip / virtualenv
-- PostgreSQL **15+**
+| Name | Role |
+|------|------|
+| **Zangbé Kossi** | Developer |
+| **Orphée Bonnardeau** | Developer |
+
+**Supervisor**: 
+ Federico Biggio — Université de Tours, CESR
+ Carlos Gallardo — Université de Tours, CESR
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Backend | Django 5.2.4 |
+| API | Django REST Framework |
+| Database | PostgreSQL 15 |
+| Web Server | Gunicorn |
+| Hosting | Railway |
+| Media Storage | Cloudinary |
+| Frontend | Bootstrap 5, ECharts |
+
+---
+
+## � Branches
+
+- **`main`** — Branche principale (code actuel en production)
+- **`version-before-deploy`** — Snapshot avant déploiement
+- **`version-after-deploy`** — Snapshot après déploiement
+
+### Utilisation des branches
+
+```bash
+# Voir les branches
+git branch -a
+
+# Basculer vers une branche
+git checkout version-before-deploy
+git checkout version-after-deploy
+
+# Créer une branche pour une nouvelle feature
+git checkout -b feature/ma-feature
+```
+
+---
+
+## �🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- PostgreSQL 15+
 - Git
 
----
-
-## 🚀 Installation rapide
+### Installation
 
 ```bash
-# 1. Cloner le dépôt
+# Clone the repository
 git clone https://scm.univ-tours.fr/22510981t/wave.git
-cd wave
+cd wave/projet_wave1
 
-# 2. Créer l'environnement virtuel
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# venv\Scripts\activate   # Windows
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# or
+venv\Scripts\activate  # Windows
 
-# 3. Installer les dépendances
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Configurer les variables d'environnement
+# Configure environment
 cp .env.example .env
-# Éditer .env avec vos valeurs
+# Edit .env with your settings
 
-# 5. Appliquer les migrations
+# Run migrations
 python manage.py migrate
 
-# 6. Créer un superutilisateur
-python manage.py createsuperuser
+# Load data
+python manage.py loaddata wave_data_fixed.json
 
-# 7. Lancer le serveur
+# Start development server
 python manage.py runserver
 ```
 
-L'application est accessible sur **http://localhost:8000**
+Open **http://127.0.0.1:8000** in your browser.
 
 ---
 
-## ⚙️ Configuration
-
-Copiez `.env.example` en `.env` et renseignez les variables :
-
-```env
-# Django
-SECRET_KEY=votre-clé-secrète
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Base de données
-DATABASE_URL=postgresql://user:password@localhost:5432/wave_db
-
-# Redis (optionnel)
-REDIS_URL=redis://localhost:6379/0
-
-# Email
-EMAIL_HOST=smtp.exemple.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=noreply@exemple.com
-EMAIL_HOST_PASSWORD=mot-de-passe
-```
-
----
-
-## ▶️ Lancer le projet
-
-**Développement :**
-```bash
-python manage.py runserver
-```
-
-**Avec Docker :**
-```bash
-# 1. Cloner le dépôt
-git clone https://scm.univ-tours.fr/22510981t/wave.git
-cd wave
-
-# 2. Lancer les conteneurs
-docker compose up -d
-
-# 3. Appliquer les migrations
-docker compose exec web python manage.py migrate
-
-# 4. Importer les données
-docker compose exec -T db psql -U wave_kobe -d wave_kobe_db < backup_data.sql
-```
-
-L'application est accessible sur **http://localhost:8000**
-
-**Production :**
-```bash
-gunicorn wave.wsgi:application --bind 0.0.0.0:8000
-```
-
----
-
-## 🧪 Tests
-
-```bash
-# Tous les tests
-python manage.py test
-
-# Avec couverture
-pip install coverage
-coverage run manage.py test
-coverage report
-coverage html  # rapport HTML dans htmlcov/
-
-# Tests d'une application spécifique
-python manage.py test projet_wave.tests
-```
-
----
-
-## 📁 Structure du projet
+## 📁 Project Structure
 
 ```
 wave/
-├── .gitlab/                    # Templates GitLab (issues, MR)
-│   ├── issue_templates/
-│   └── merge_request_templates/
-├── docs/                       # Documentation complète
-│   ├── uml/                    # Diagrammes UML
-│   ├── dev/                    # Guide développeur
-│   └── user/                   # Guide utilisateur
-├── projet_wave/                # Application Django principale
-│   ├── migrations/
-│   ├── models.py
-│   ├── views.py
+├── projet_wave1/          # Django project settings
+│   ├── settings.py
 │   ├── urls.py
-│   ├── forms.py
-│   ├── admin.py
-│   └── tests.py
-├── templates/                  # Templates HTML
-├── static/                     # Fichiers statiques
-├── manage.py
-├── requirements.txt
-├── requirements-dev.txt
-├── .env.example
-├── .gitlab-ci.yml
-├── docker-compose.yml
-└── README.md
+│   └── wsgi.py
+├── kobe_wave/             # Main application
+│   ├── models.py          # Database models
+│   ├── views.py           # View functions
+│   ├── api_views.py       # REST API endpoints
+│   ├── urls.py            # URL routing
+│   ├── serializers.py     # API serializers
+│   ├── templates/         # HTML templates
+│   └── static/            # CSS, JS, images
+├── requirements.txt       # Python dependencies
+├── Procfile               # Railway deployment
+└── manage.py
 ```
 
 ---
 
-## 📚 Documentation
+## 📄 License
 
-| Document | Description |
-|----------|-------------|
-| [UML & Architecture](./docs/uml/architecture.md) | Diagrammes UML, architecture système |
-| [Guide développeur](./docs/dev/setup.md) | Setup, conventions, API |
-| [Guide utilisateur](./docs/user/guide.md) | Manuel d'utilisation |
-| [CONTRIBUTING](./CONTRIBUTING.md) | Comment contribuer |
-| [CHANGELOG](./CHANGELOG.md) | Historique des versions |
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🤝 Contribuer
+## 🏛️ Institution
 
-Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](./CONTRIBUTING.md) pour les directives.
-
----
-
-## 📄 Licence
-
-Ce projet est sous licence **MIT** — voir le fichier [LICENSE](./LICENSE) pour plus de détails.
-
----
-
-## 👥 Équipe Kobe
-
-- [kossi Zangbe](https://scm.univ-tours.fr/22510981t)
-- [Orphée Bonardeau](https://scm.univ-tours.fr/22205925t)
-- [Elise Matta]
-
-*Maintenu par l'équipe Kobe — dernière mise à jour : avril 2026*
+Developed at **Université de Tours**  
+Centre d'Études Supérieures de la Renaissance (CESR)  
+Tours, France
