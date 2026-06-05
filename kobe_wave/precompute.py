@@ -118,6 +118,7 @@ word_freq = Counter()
 cooccur = defaultdict(int)
 is_ready = False
 
+
 def precompute():
     global is_ready
     from kobe_wave.models import Article
