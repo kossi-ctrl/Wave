@@ -65,9 +65,9 @@ MIDDLEWARE = [
 ]
 
 
-ROOT_URLCONF = "projet_wave1.urls"
+ROOT_URLCONF = "projet_wave1.projet_wave1.urls"
 
-WSGI_APPLICATION = "projet_wave1.wsgi.application"
+WSGI_APPLICATION = "projet_wave1.projet_wave1.wsgi.application"
 
 
 # -----------------------------
