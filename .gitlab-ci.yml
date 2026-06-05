@@ -33,7 +33,7 @@ test:unit:
     CLOUDINARY_API_KEY: "test"
     CLOUDINARY_API_SECRET: "test"
   script:
-    - python3 -m coverage run manage.py test kobe_wave
+    - python3 -m coverage run "$CI_PROJECT_DIR/manage.py" test kobe_wave
     - python3 -m coverage report
     - python3 -m coverage xml
   coverage: '/TOTAL.*\s+(\d+%)$/'
