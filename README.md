@@ -16,6 +16,11 @@
 
 ---
 
+## 🎨 Prototype Figma
+[Voir le prototype](https://www.figma.com/proto/mewZid3X8Ixe3o3WgJsXHu/wave_prototype?node-id=5-165&p=f&viewport=333\%2C175\%2C0.1&t=sBeXYD1dA80R4Qzm-1&scaling=contain&content-scaling=fixed&page-id=0\%3A1)
+
+---
+
 ## 📖 About
 
 WAVE is an academic web application developed at the **Centre d'Études Supérieures de la Renaissance (CESR)**, Université de Tours. It allows researchers to analyze and visualize data from the **Wired** magazine, covering publications from **1993 to 2025**.
