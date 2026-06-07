@@ -20,5 +20,9 @@ COPY . .
 # Exposer le port 8000
 EXPOSE 8000
 
+ENV PYTHONPATH=/app/projet_wave1
+
 # Lancer le serveur Django
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+
