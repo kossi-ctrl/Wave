@@ -10,4 +10,4 @@ COPY . .
 WORKDIR /app/projet_wave1
 EXPOSE 8000
 ENV PYTHONPATH=/app/projet_wave1:/app
-CMD ["gunicorn", "projet_wave1.wsgi", "--log-file", "-", "--timeout", "120", "--workers", "2", "--bind", "0.0.0.0:8080"]
+CMD ["sh", "-c", "python manage.py migrate && gunicorn projet_wave1.wsgi --log-file - --timeout 120 --workers 2 --bind 0.0.0.0:8080"]
