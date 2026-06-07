@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return links.map(l => ({
             source: l.source,
             target: l.target,
-            value: l.value,
+            value: l.value ?? 0,
             lineStyle: { width: 1 + Math.log(l.value || 1), color: '#aaaaaa', opacity: 0.4, curveness: 0.3 }
         }));
     }
@@ -304,19 +304,26 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             const words = data.words;
             const cats = data.categories;
-           radialChart.setOption({
-    tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        formatter: params => {
-            const lines = params
-                .filter(p => p.value != null && p.value > 0)
-                .map(p => `${p.marker} ${p.seriesName}: <b>${p.value}</b>`)
-                .join('<br/>');
-            return `<b>${params[0].axisValue}</b><br/>${lines || 'Aucune donnée'}`;
-        }
-    },
-    // ... reste de l'option
+            radialChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: params => {
+                        const lines = params
+                            .filter(p => p.value != null && p.value > 0)
+                            .map(p => `${p.marker} ${p.seriesName}: <b>${p.value}</b>`)
+                            .join('<br/>');
+                        return `<b>${params[0].axisValue}</b><br/>${lines || 'Aucune donnée'}`;
+                    }
+                },
+                legend: { data: cats, bottom: 0, type: 'scroll', itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } },
+                polar: { radius: ['15%', '75%'] },
+                angleAxis: {
+                    type: 'category',
+                    data: words.map(w => w.word),
+                    startAngle: 90,
+                    axisLabel: { fontSize: 12, fontWeight: 'bold' }
+                },
                 radiusAxis: { type: 'value' },
                 series: cats.map((cat, ci) => ({
                     type: 'bar',
@@ -332,6 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-}); 
+});
 </script>
 {% endblock %}
