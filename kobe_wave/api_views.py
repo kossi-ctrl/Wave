@@ -12,7 +12,6 @@ from kobe_wave import precompute as pc
 
 STOP_WORDS = frozenset(
     {
-        
         "le",
         "la",
         "les",
@@ -38,7 +37,6 @@ STOP_WORDS = frozenset(
         "leurs",
         "nos",
         "vos",
-        
         "de",
         "en",
         "dans",
@@ -81,7 +79,6 @@ STOP_WORDS = frozenset(
         "avant",
         "pendant",
         "contre",
-        
         "est",
         "sont",
         "etre",
@@ -100,7 +97,6 @@ STOP_WORDS = frozenset(
         "seront",
         "etait",
         "avait",
-        
         "il",
         "elle",
         "ils",
@@ -113,12 +109,9 @@ STOP_WORDS = frozenset(
         "celui",
         "celle",
         "ceux",
-        
         "the",
         "a",
         "an",
-        
-
         "in",
         "on",
         "at",
@@ -265,7 +258,7 @@ STOP_WORDS = frozenset(
 WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 
 
-# /api/cooccurrence/ 
+# /api/cooccurrence/
 
 
 @api_view(["GET"])
@@ -274,7 +267,8 @@ def api_cooccurrence(request):
 
     if not pc.is_ready:
         return Response(
-            {"error": "Précalcul en cours, réessayez dans quelques secondes."}, status=503
+            {"error": "Précalcul en cours, réessayez dans quelques secondes."},
+            status=503,
         )
 
     if not word:
@@ -300,9 +294,7 @@ def api_cooccurrence(request):
         if not related:
             return Response({"nodes": [], "links": [], "value": 0})
 
-        top_related = sorted(
-            related.items(), key=lambda x: x[1], reverse=True
-        )[:15]
+        top_related = sorted(related.items(), key=lambda x: x[1], reverse=True)[:15]
         nodes = [{"id": word, "value": pc.word_freq.get(word, 1)}]
         links = []
         for w, count in top_related:
@@ -327,7 +319,7 @@ def api_cooccurrence(request):
     return Response(result)
 
 
-# /api/radial/ 
+# /api/radial/
 
 
 @api_view(["GET"])
@@ -357,8 +349,7 @@ def api_radial(request):
     )
 
     active_cats = [
-        cat for cat in all_cats
-        if any(word_cat[w].get(cat, 0) > 0 for w in top_words)
+        cat for cat in all_cats if any(word_cat[w].get(cat, 0) > 0 for w in top_words)
     ]
 
     result = {
@@ -367,7 +358,8 @@ def api_radial(request):
                 "word": w,
                 "total": word_total[w],
                 "by_category": [
-                    {"category": cat, "count": word_cat[w].get(cat, 0)} for cat in active_cats
+                    {"category": cat, "count": word_cat[w].get(cat, 0)}
+                    for cat in active_cats
                 ],
             }
             for w in top_words
@@ -379,7 +371,7 @@ def api_radial(request):
     return Response(result)
 
 
-# /api/articles_cooccurrence/ 
+# /api/articles_cooccurrence/
 
 
 @api_view(["GET"])
@@ -396,7 +388,7 @@ def api_articles_cooccurrence(request):
     return Response(ArticleSerializer(qs, many=True).data)
 
 
-# /api/articles/ 
+# /api/articles/
 
 
 @api_view(["GET"])
@@ -413,16 +405,18 @@ def api_articles(request):
     return Response(ArticleSerializer(qs[:100], many=True).data)
 
 
-#  /api/categories/ 
+#  /api/categories/
 
 
 @api_view(["GET"])
 def api_categories(request):
     qs = Category.objects.annotate(total=Count("article")).order_by("-total")
-    return Response([{"id": c.id_category, "name": c.name, "total": c.total} for c in qs])
+    return Response(
+        [{"id": c.id_category, "name": c.name, "total": c.total} for c in qs]
+    )
 
 
-#  /api/images/ 
+#  /api/images/
 
 
 @api_view(["GET"])
@@ -433,7 +427,7 @@ def api_images(request):
     return Response(ImageSerializer(qs[:100], many=True).data)
 
 
-#  /api/stats/ 
+#  /api/stats/
 
 
 @api_view(["GET"])
@@ -452,7 +446,7 @@ def api_stats(request):
     return Response(result)
 
 
-#  /api/covers/ 
+#  /api/covers/
 
 
 @api_view(["GET"])
@@ -463,7 +457,9 @@ def api_covers(request):
 
     cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
     cat_map = defaultdict(set)
-    for row in Article.objects.filter(category__isnull=False).values("image_id", "category_id"):
+    for row in Article.objects.filter(category__isnull=False).values(
+        "image_id", "category_id"
+    ):
         cat_map[row["image_id"]].add(row["category_id"])
 
     images = Image.objects.only(
@@ -492,7 +488,7 @@ def api_covers(request):
     return Response(result)
 
 
-# /api/colors/ 
+# /api/colors/
 
 
 @api_view(["GET"])
@@ -508,14 +504,16 @@ def api_colors(request):
     if category:
         qs = qs.filter(article__category__name__icontains=category)
     colors = list(
-        qs.values("hexadecimal").annotate(total=Count("id_image")).order_by("-total")[:20]
+        qs.values("hexadecimal")
+        .annotate(total=Count("id_image"))
+        .order_by("-total")[:20]
     )
 
     cache.set(cache_key, colors, 60 * 30)
     return Response(colors)
 
 
-# /api/heatmap/ 
+# /api/heatmap/
 
 
 @api_view(["GET"])
@@ -584,7 +582,7 @@ def api_heatmap(request):
     return Response(result)
 
 
-# /api/color-analysis/ 
+# /api/color-analysis/
 
 
 @api_view(["GET"])
@@ -610,7 +608,7 @@ def api_color_analysis(request):
             if len(hex_color) != 6:
                 continue
             try:
-                r, g, b = (int(hex_color[i: i + 2], 16) / 255 for i in (0, 2, 4))
+                r, g, b = (int(hex_color[i : i + 2], 16) / 255 for i in (0, 2, 4))
                 h, s, v = colorsys.rgb_to_hsv(r, g, b)
                 cover_url = None
                 if img["filename"]:
@@ -639,7 +637,7 @@ def api_color_analysis(request):
         return Response({"error": "server error"}, status=500)
 
 
-# /api/cover-words/ 
+# /api/cover-words/
 
 
 @api_view(["GET"])
@@ -668,9 +666,15 @@ def api_cover_words(request):
             created_at__year=year, created_at__month=month
         ).values_list("title", flat=True):
             if title:
-                filtered = (w for w in WORD_PATTERN.findall(title.lower()) if w not in STOP_WORDS)
+                filtered = (
+                    w
+                    for w in WORD_PATTERN.findall(title.lower())
+                    if w not in STOP_WORDS
+                )
                 all_words.extend(filtered)
-        words_data = [{"name": w, "value": c} for w, c in Counter(all_words).most_common(40)]
+        words_data = [
+            {"name": w, "value": c} for w, c in Counter(all_words).most_common(40)
+        ]
 
     result = {
         "year": year,
