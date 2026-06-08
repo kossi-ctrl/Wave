@@ -4,10 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>{% block title %}Wave{% endblock %}</title>
 
-    <!-- CSS -->
     <link href="{% static 'kobe_wave/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'kobe_wave/css/style.css' %}" rel="stylesheet">
 
@@ -30,13 +28,9 @@
             color: var(--color-text);
         }
 
-        .main-content {
-            flex: 1;
-        }
+        .main-content { flex: 1; }
 
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--color-text);
-        }
+        h1, h2, h3, h4, h5, h6 { color: var(--color-text); }
 
         /* ── NAVBAR ── */
         .navbar {
@@ -48,26 +42,22 @@
             color: var(--color-nav-text) !important;
         }
 
-        .navbar .nav-link:hover {
-            opacity: 0.7;
+        /* ── NAV HOVER ── */
+        .navbar-nav a {
+            border-bottom: 2px solid transparent;
+            padding-bottom: 2px;
+            transition: border-bottom 0.2s;
         }
 
-        /* ── NAV HOVER ── */
-.navbar-nav a {
-    border-bottom: 2px solid transparent;
-    padding-bottom: 2px;
-    transition: border-bottom 0.2s;
-}
+        .navbar-nav a:hover {
+            border-bottom: 2px solid var(--color-nav-text);
+            opacity: 1;
+        }
 
-.navbar-nav a:hover {
-    border-bottom: 2px solid var(--color-nav-text);
-    opacity: 1;
-}
-
-/* ── NAV ACTIVE ── */
-.navbar-nav a.active {
-    font-weight: bold;
-}
+        /* ── NAV ACTIVE ── */
+        .navbar-nav a.active {
+            font-weight: bold;
+        }
 
         /* ── FOOTER ── */
         footer {
@@ -113,9 +103,7 @@
             transition: color 0.2s;
         }
 
-        .footer-top-btn:hover {
-            opacity: 0.7;
-        }
+        .footer-top-btn:hover { opacity: 0.7; }
     </style>
 </head>
 
@@ -147,18 +135,13 @@
 <footer>
     <div class="container">
         <div class="footer-inner">
-
-            <!-- Gauche : Contact us -->
             <div class="footer-contact">
                 <a href="{% url 'contact' %}">Contact us</a>
             </div>
-
-            <!-- Droite : Logos + Flèche -->
             <div class="footer-logos">
                 <img src="{% static 'kobe_wave/img/logoUniv_CesrBLANC.png' %}" alt="Logos" style="height:48px;" usemap="#logos-map">
                 <a href="#" class="footer-top-btn" title="Back to top">↑</a>
             </div>
-
         </div>
     </div>
 </footer>
@@ -168,12 +151,11 @@
     <area href="https://cesr.cnrs.fr" target="_blank" rel="noopener noreferrer" alt="CESR" shape="rect" coords="100,0,200,48">
 </map>
 
-
 <script src="{% static 'kobe_wave/js/bootstrap.bundle.min.js' %}"></script>
 
 <script>
-    const liens = document.querySelectorAll(".navbar-nav a");
-    liens.forEach(lien => {
+    /* ── NAV ACTIVE : met en gras le lien de la page courante ── */
+    document.querySelectorAll(".navbar-nav a").forEach(lien => {
         if (lien.href === window.location.href) {
             lien.classList.add("active");
         }
