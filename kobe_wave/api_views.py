@@ -12,7 +12,7 @@ from kobe_wave import precompute as pc
 
 STOP_WORDS = frozenset(
     {
-        # Articles / determiners FR
+        
         "le",
         "la",
         "les",
@@ -38,7 +38,7 @@ STOP_WORDS = frozenset(
         "leurs",
         "nos",
         "vos",
-        # Prepositions / conjunctions FR
+        
         "de",
         "en",
         "dans",
@@ -81,7 +81,7 @@ STOP_WORDS = frozenset(
         "avant",
         "pendant",
         "contre",
-        # Common verbs FR
+        
         "est",
         "sont",
         "etre",
@@ -100,7 +100,7 @@ STOP_WORDS = frozenset(
         "seront",
         "etait",
         "avait",
-        # Pronouns FR
+        
         "il",
         "elle",
         "ils",
@@ -113,11 +113,12 @@ STOP_WORDS = frozenset(
         "celui",
         "celle",
         "ceux",
-        # Articles EN
+        
         "the",
         "a",
         "an",
-        # Prepositions / conjunctions EN
+        
+
         "in",
         "on",
         "at",
@@ -264,7 +265,7 @@ STOP_WORDS = frozenset(
 WORD_PATTERN = re.compile(r"\b[a-zA-ZÀ-ÿ]{5,}\b")
 
 
-# ── /api/cooccurrence/ ──────────────────────────────────────────
+# /api/cooccurrence/ 
 
 
 @api_view(["GET"])
@@ -326,7 +327,7 @@ def api_cooccurrence(request):
     return Response(result)
 
 
-# ── /api/radial/ ────────────────────────────────────────────────
+# /api/radial/ 
 
 
 @api_view(["GET"])
@@ -378,7 +379,7 @@ def api_radial(request):
     return Response(result)
 
 
-# ── /api/articles_cooccurrence/ ─────────────────────────────────
+# /api/articles_cooccurrence/ 
 
 
 @api_view(["GET"])
@@ -395,7 +396,7 @@ def api_articles_cooccurrence(request):
     return Response(ArticleSerializer(qs, many=True).data)
 
 
-# ── /api/articles/ ──────────────────────────────────────────────
+# /api/articles/ 
 
 
 @api_view(["GET"])
@@ -412,7 +413,7 @@ def api_articles(request):
     return Response(ArticleSerializer(qs[:100], many=True).data)
 
 
-# ── /api/categories/ ────────────────────────────────────────────
+#  /api/categories/ 
 
 
 @api_view(["GET"])
@@ -421,7 +422,7 @@ def api_categories(request):
     return Response([{"id": c.id_category, "name": c.name, "total": c.total} for c in qs])
 
 
-# ── /api/images/ ────────────────────────────────────────────────
+#  /api/images/ 
 
 
 @api_view(["GET"])
@@ -432,7 +433,7 @@ def api_images(request):
     return Response(ImageSerializer(qs[:100], many=True).data)
 
 
-# ── /api/stats/ ─────────────────────────────────────────────────
+#  /api/stats/ 
 
 
 @api_view(["GET"])
@@ -451,7 +452,7 @@ def api_stats(request):
     return Response(result)
 
 
-# ── /api/covers/ ─────────────────────────────────────────────────
+#  /api/covers/ 
 
 
 @api_view(["GET"])
@@ -491,7 +492,7 @@ def api_covers(request):
     return Response(result)
 
 
-# ── /api/colors/ ────────────────────────────────────────────────
+# /api/colors/ 
 
 
 @api_view(["GET"])
@@ -514,7 +515,7 @@ def api_colors(request):
     return Response(colors)
 
 
-# ── /api/heatmap/ ────────────────────────────────────────────────
+# /api/heatmap/ 
 
 
 @api_view(["GET"])
@@ -583,7 +584,7 @@ def api_heatmap(request):
     return Response(result)
 
 
-# ── /api/color-analysis/ ────────────────────────────────────────
+# /api/color-analysis/ 
 
 
 @api_view(["GET"])
@@ -638,7 +639,7 @@ def api_color_analysis(request):
         return Response({"error": "server error"}, status=500)
 
 
-# ── /api/cover-words/ ───────────────────────────────────────────
+# /api/cover-words/ 
 
 
 @api_view(["GET"])

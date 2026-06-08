@@ -6,7 +6,7 @@
 
     <h1 style="color:white;">Explore the data</h1>
 
-    <!-- ROW 1 : Texte + Co-occurrence Network -->
+    
     <div class="row g-4 mb-5">
         <div class="col-md-4">
             <p style="color:white; text-align:justify;">
@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <!-- ROW 2 : Radial Chart + Texte -->
+    
     <div class="row g-4 mb-5">
         <div class="col-md-8">
             <div class="card shadow-sm border-0 p-3">
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadGraph();
 
-    // ── Clic edge ────────────────────────────────────────
+    
     chart.on('click', { dataType: 'edge' }, params => {
         lastClickType = 'edge';
         const w1 = params.data.source, w2 = params.data.target;
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(articles => renderArticles(articles, `${w1} ↔ ${w2}`));
     });
 
-    // ── Clic node ────────────────────────────────────────
+    
     chart.on('click', { dataType: 'node' }, params => {
         if (lastClickType === 'edge') {
             lastClickType = null;
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(articles => renderArticles(articles, `"${word}"`));
     });
 
-    // ── Recherche ─────────────────────────────────────────
+    
     document.getElementById('btnSearch').addEventListener('click', () => {
         const word = document.getElementById('searchWord').value.trim().toLowerCase();
         if (!word) return;
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(() => alert(`Impossible de charger "${word}".`));
     });
 
-    // ── Reset ─────────────────────────────────────────────
+
     document.getElementById('btnReset').addEventListener('click', () => {
         document.getElementById('searchWord').value = '';
         document.getElementById('networkPanel').style.display = 'none';
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGraph(originalNodes, originalLinks);
     });
 
-    // ── Radial Chart ──────────────────────────────────────
+
     fetch('/api/radial/')
         .then(r => r.json())
         .then(data => {

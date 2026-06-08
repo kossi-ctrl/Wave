@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 load_dotenv(BASE_DIR / ".env", override=False)
 
@@ -164,11 +164,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "kobe_wave" / "media"
 
-
-# -----------------------------
-# CLOUDINARY
-# -----------------------------
-
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
     "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
@@ -177,10 +172,6 @@ CLOUDINARY_STORAGE = {
 
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
-
-# -----------------------------
-# EMAIL
-# -----------------------------
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
@@ -198,16 +189,9 @@ DEFAULT_FROM_EMAIL = os.environ.get(
 )
 
 
-# -----------------------------
-# OTHERS
-# -----------------------------
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 
 
-# -----------------------------
-# CI SAFE FLAG (IMPORTANT)
-# -----------------------------
 RUN_PRECOMPUTE = os.environ.get("RUN_PRECOMPUTE", "False") == "True"
