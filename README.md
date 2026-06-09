@@ -102,7 +102,7 @@ The script handles everything automatically: dependencies, database setup, data 
 
 ## 📁 Project Structure
 
-
+```
 wave/
 ├── projet_wave1/          # Django project settings
 │   ├── settings.py
@@ -119,6 +119,7 @@ wave/
 ├── requirements.txt       # Python dependencies
 ├── Procfile               # Railway deployment
 └── manage.py
+```
 ---
 
 ## 📄 License
