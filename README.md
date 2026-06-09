@@ -119,8 +119,6 @@ wave/
 ├── requirements.txt       # Python dependencies
 ├── Procfile               # Railway deployment
 └── manage.py
-
-
 ---
 
 ## 📄 License
