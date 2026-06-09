@@ -82,7 +82,7 @@ cd wave
 
 # Mac/Linux :
 chmod +x lancer_mac_linux.sh && ./lancer_mac_linux.sh
-cd wave/projet_wave1
+
 ```
 
 ### Étape 3 — Double-cliquer sur le script
@@ -124,7 +124,7 @@ python manage.py runserver
 
 ## 📁 Project Structure
 
-```
+
 wave/
 ├── projet_wave1/          # Django project settings
 │   ├── settings.py
@@ -141,7 +141,7 @@ wave/
 ├── requirements.txt       # Python dependencies
 ├── Procfile               # Railway deployment
 └── manage.py
-```
+
 
 ---
 
