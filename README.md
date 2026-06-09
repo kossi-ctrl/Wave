@@ -75,7 +75,13 @@ Tu as besoin de **Python 3.11+** installé sur ton ordinateur.
 ### Étape 2 — Cloner le repo
 
 ```bash
-git clone https://scm.univ-tours.fr/22510981t/wave.git
+git clone https://kossi:glpat-EiK-kTgQ2F32PfrONYkmcm86MQp1OjEzYgk.01.0z09wqyki@scm.univ-tours.fr/22510981t/wave.git
+cd wave
+
+# Windows : double-cliquer sur lancer_windows.bat
+
+# Mac/Linux :
+chmod +x lancer_mac_linux.sh && ./lancer_mac_linux.sh
 cd wave/projet_wave1
 ```
 
