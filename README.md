@@ -65,34 +65,46 @@ WAVE is an academic web application developed at the **Centre d'Études Supérie
 
 ## �🚀 Quick Start
 
-### Prerequisites
+## 🚀 Lancer le projet en local
 
-- Python 3.11+
-- PostgreSQL 15+
-- Git
+### Étape 1 — Installer Python
 
-### Installation
+Tu as besoin de **Python 3.11+** installé sur ton ordinateur.  
+→ [Guide d'installation Python par OS](INSTALLER_PYTHON.md)
+
+### Étape 2 — Cloner le repo
 
 ```bash
-# Clone the repository
 git clone https://scm.univ-tours.fr/22510981t/wave.git
 cd wave/projet_wave1
+```
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate  # Windows
+### Étape 3 — Double-cliquer sur le script
 
-# Install dependencies
-pip install -r requirements.txt
+| Ton OS | Fichier à lancer |
+|---|---|
+| Windows | `lancer_windows.bat` |
+| Mac / Linux | `lancer_mac_linux.sh` |
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your settings
+Le script fait tout automatiquement : installation des dépendances, base de données, chargement des données, et ouverture du navigateur.
 
-# Run migrations
-python manage.py migrate
+➡️ L'application s'ouvre sur **http://localhost:8000**
+
+> **Mac/Linux** — si le double-clic ne fonctionne pas, ouvre un terminal dans le dossier et tape :
+> ```bash
+> chmod +x lancer_mac_linux.sh && ./lancer_mac_linux.sh
+> ```
+
+### Problèmes fréquents
+
+**❌ "Python n'est pas installé"**  
+→ Suis le [guide d'installation Python](INSTALLER_PYTHON.md) puis relance le script.
+
+**❌ Le port 8000 est déjà utilisé**  
+→ Ferme l'autre application qui l'utilise, ou relance le script.
+
+**❌ Les images ne s'affichent pas**  
+→ Vérifie ta connexion internet — les images sont hébergées sur Cloudinary.
 
 # Load data
 python manage.py loaddata wave_data_fixed.json
