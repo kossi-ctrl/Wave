@@ -101,29 +101,6 @@ The script handles everything automatically: dependencies, database setup, data 
 
 ---
 
-## 📁 Project Structure
-
-
-wave/
-├── projet_wave1/          # Django project settings
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-├── kobe_wave/             # Main application
-│   ├── models.py          # Database models
-│   ├── views.py           # View functions
-│   ├── api_views.py       # REST API endpoints
-│   ├── urls.py            # URL routing
-│   ├── serializers.py     # API serializers
-│   ├── templates/         # HTML templates
-│   └── static/            # CSS, JS, images
-├── requirements.txt       # Python dependencies
-├── Procfile               # Railway deployment
-└── manage.py
-
-
----
-
 
 ## 📁 Project Structure
 
