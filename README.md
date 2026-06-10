@@ -63,6 +63,7 @@ WAVE is an academic web application developed at the **Centre d'Études Supérie
 ---
 
 
+
 ## 🚀 Quick Start — Run locally
 
 ### Step 1 — Install Python
@@ -75,8 +76,8 @@ You need **Python 3.11+** installed on your computer.
 Open a terminal and run:
 
 ```bash
-git clone https://kossi:glpat-EiK-kTgQ2F32PfrONYkmcm86MQp1OjEzYgk.01.0z09wqyki@scm.univ-tours.fr/22510981t/wave.git
-cd wave
+
+git clone https://github.com/kossi-ctrl/wave.git
 
 # Windows: double-click lancer_windows.bat
 # Mac/Linux:
@@ -100,6 +101,7 @@ The script handles everything automatically: dependencies, database setup, data 
 
 ---
 
+
 ## 📁 Project Structure
 
 ```
@@ -120,6 +122,7 @@ wave/
 ├── Procfile               # Railway deployment
 └── manage.py
 ```
+
 ---
 
 ## 📄 License
