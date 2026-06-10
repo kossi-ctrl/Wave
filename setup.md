@@ -11,89 +11,41 @@
 
 ## 🚀 Installation
 
-### 1. Clone the repository
+### Step 1 — Install Python
+
+You need **Python 3.11+** installed on your computer.  
+→ [Python installation guide (by OS)](INSTALLER_PYTHON.md)
+
+### Step 2 — Clone and launch
+
+Open a terminal and run:
 
 ```bash
-git clone https://scm.univ-tours.fr/22510981t/wave.git
-cd wave/projet_wave1
+git clone https://kossi:glpat-EiK-kTgQ2F32PfrONYkmcm86MQp1OjEzYgk.01.0z09wqyki@scm.univ-tours.fr/22510981t/wave.git
+cd wave
+
+# Windows: double-click lancer_windows.bat
+# Mac/Linux:
+chmod +x lancer_mac_linux.sh && ./lancer_mac_linux.sh
 ```
 
-### 2. Create virtual environment
+The script handles everything automatically: dependencies, database setup, data loading, and opens the app in your browser.
 
-```bash
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-```
+➡️ The app will be available at **http://localhost:8000**
 
-### 3. Install dependencies
+### Troubleshooting
 
-```bash
-pip install -r requirements.txt
-pip install -r requirements-dev.txt  # for development tools
-```
+**❌ "Python is not installed"**  
+→ Follow the [Python installation guide](INSTALLER_PYTHON.md) and rerun the script.
 
-### 4. Configure environment
+**❌ Port 8000 is already in use**  
+→ Close the other application using it, then rerun the script.
 
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your settings:
-
-```env
-DEBUG=True
-SECRET_KEY=your-secret-key
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# PostgreSQL
-PGDATABASE=wave_kobe_db
-PGUSER=wave_kobe
-PGPASSWORD=your-password
-PGHOST=localhost
-PGPORT=5432
-
-# Cloudinary (for media files)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-
-# Email
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_APP_PASSWORD=your-app-password
-```
-
-### 5. Create database
-
-```bash
-psql -U postgres
-CREATE DATABASE wave_kobe_db;
-CREATE USER wave_kobe WITH PASSWORD 'your-password';
-GRANT ALL PRIVILEGES ON DATABASE wave_kobe_db TO wave_kobe;
-\q
-```
-
-### 6. Run migrations
-
-```bash
-python manage.py migrate
-```
-
-### 7. Load data
-
-```bash
-python manage.py loaddata wave_data_fixed.json
-```
-
-### 8. Start development server
-
-```bash
-python manage.py runserver
-```
-
-Open **http://127.0.0.1:8000**
+**❌ Images are not showing**  
+→ Check your internet connection — images are hosted on Cloudinary.
 
 ---
+
 
 ## 📁 Project Structure
 

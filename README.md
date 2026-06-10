@@ -63,56 +63,40 @@ WAVE is an academic web application developed at the **Centre d'Études Supérie
 ---
 
 
-## �🚀 Quick Start
+## 🚀 Quick Start — Run locally
 
-## 🚀 Lancer le projet en local
+### Step 1 — Install Python
 
-### Étape 1 — Installer Python
+You need **Python 3.11+** installed on your computer.  
+→ [Python installation guide (by OS)](INSTALLER_PYTHON.md)
 
-Tu as besoin de **Python 3.11+** installé sur ton ordinateur.  
-→ [Guide d'installation Python par OS](INSTALLER_PYTHON.md)
+### Step 2 — Clone and launch
 
-### Étape 2 — Cloner le repo
+Open a terminal and run:
 
 ```bash
-git clone https://scm.univ-tours.fr/22510981t/wave.git
-cd wave/projet_wave1
+git clone https://kossi:glpat-EiK-kTgQ2F32PfrONYkmcm86MQp1OjEzYgk.01.0z09wqyki@scm.univ-tours.fr/22510981t/wave.git
+cd wave
+
+# Windows: double-click lancer_windows.bat
+# Mac/Linux:
+chmod +x lancer_mac_linux.sh && ./lancer_mac_linux.sh
 ```
 
-### Étape 3 — Double-cliquer sur le script
+The script handles everything automatically: dependencies, database setup, data loading, and opens the app in your browser.
 
-| Ton OS | Fichier à lancer |
-|---|---|
-| Windows | `lancer_windows.bat` |
-| Mac / Linux | `lancer_mac_linux.sh` |
+➡️ The app will be available at **http://localhost:8000**
 
-Le script fait tout automatiquement : installation des dépendances, base de données, chargement des données, et ouverture du navigateur.
+### Troubleshooting
 
-➡️ L'application s'ouvre sur **http://localhost:8000**
+**❌ "Python is not installed"**  
+→ Follow the [Python installation guide](INSTALLER_PYTHON.md) and rerun the script.
 
-> **Mac/Linux** — si le double-clic ne fonctionne pas, ouvre un terminal dans le dossier et tape :
-> ```bash
-> chmod +x lancer_mac_linux.sh && ./lancer_mac_linux.sh
-> ```
+**❌ Port 8000 is already in use**  
+→ Close the other application using it, then rerun the script.
 
-### Problèmes fréquents
-
-**❌ "Python n'est pas installé"**  
-→ Suis le [guide d'installation Python](INSTALLER_PYTHON.md) puis relance le script.
-
-**❌ Le port 8000 est déjà utilisé**  
-→ Ferme l'autre application qui l'utilise, ou relance le script.
-
-**❌ Les images ne s'affichent pas**  
-→ Vérifie ta connexion internet — les images sont hébergées sur Cloudinary.
-
-# Load data
-python manage.py loaddata wave_data_fixed.json
-
-# Start development server
-python manage.py runserver
-```
-
+**❌ Images are not showing**  
+→ Check your internet connection — images are hosted on Cloudinary.
 
 ---
 
@@ -136,7 +120,6 @@ wave/
 ├── Procfile               # Railway deployment
 └── manage.py
 ```
-
 ---
 
 ## 📄 License
