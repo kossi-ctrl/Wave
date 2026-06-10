@@ -46,7 +46,7 @@ python manage.py migrate --noinput
 python manage.py loaddata wave_data_fixed.json 2>/dev/null
 
 # Fichiers statiques
-python manage.py collectstatic --noinput --quiet
+python manage.py collectstatic --noinput
 
 echo ""
 echo " =================================="
